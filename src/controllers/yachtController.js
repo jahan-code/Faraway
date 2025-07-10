@@ -2,16 +2,24 @@ import Yacht from '../models/yacht.js';
 import SuccessHandler from '../utils/SuccessHandler.js';
 import ApiError from '../utils/ApiError.js';
 import mapImageFilenamesToUrls from '../utils/mapImageFilenamesToUrls.js';
+import { getYachtByIdSchema, addyachtSchema } from '../validations/yacht.validation.js';
 
 // Add a new yacht
 export const addYacht = async (req, res, next) => {
   try {
     const yachtData = req.body;
-    if (req.files && req.files.length > 0) {
-        yachtData.primaryImage = req.files.map(file => file.filename);
+    if (req.files) {
+      if (req.files.primaryImage && req.files.primaryImage.length > 0) {
+        yachtData.primaryImage = req.files.primaryImage[0].filename;
       }
-    if (req.file) {
-      yachtData.primaryImage = [req.file.filename];
+      if (req.files.galleryImages && req.files.galleryImages.length > 0) {
+        yachtData.galleryImages = req.files.galleryImages.map(file => file.filename);
+      }
+    }
+    // Now validate yachtData
+    const { error } = addyachtSchema.validate(yachtData);
+    if (error) {
+      return next(new ApiError(error.details[0].message, 400));
     }
     const newYacht = await Yacht.create(yachtData);
     const yachtWithImageUrls = mapImageFilenamesToUrls(newYacht, req);
@@ -35,6 +43,13 @@ export const getAllYachts = async (req, res, next) => {
 // Get yacht by ID
 export const getYachtById = async (req, res, next) => {
   try {
+    // Validate the query using Joi
+    const { error } = getYachtByIdSchema.validate(req.query);
+    if (error) {
+      // You can use your ApiError class for consistency
+      return next(new ApiError(error.details[0].message, 400));
+    }
+
     const { id } = req.query;
     const yacht = await Yacht.findById(id);
     if (!yacht) {

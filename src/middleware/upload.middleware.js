@@ -37,11 +37,11 @@ const fileFilter = (req, file, cb) => {
   const imageTypes = ['image/jpeg', 'image/png'];
   const pdfTypes = ['application/pdf'];
 
-  if (field === 'primaryImage') {
+  if (field === 'primaryImage' || field === 'galleryImages') {
     if ([...imageTypes, ...pdfTypes].includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only JPEG, PNG, or PDF files are allowed for primary image'), false);
+      cb(new Error('Only JPEG, PNG, or PDF files are allowed'), false);
     }
   } else {
     cb(new Error(`Unexpected upload field: ${field}`), false);

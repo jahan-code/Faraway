@@ -69,13 +69,19 @@ const addyachtSchema = Joi.object({
   daytripPriceEuro: Joi.string().allow(''),
   daytripPriceTHB: Joi.string().allow(''),
   daytripPriceUSD: Joi.string().allow(''),
-  
-  primaryImage: Joi.array()
-  .items(
-    Joi.string()).
-  required()
-  .messages({
-     'any.required': 'At least one primary image is required' 
+
+  // primaryImage should be a string, not an array
+  primaryImage: Joi.string()
+    .messages({
+      'string.base': 'Primary image must be a string',
+    }),
+
+  // galleryImages should be an array of strings (optional)
+  galleryImages: Joi.array()
+    .items(Joi.string())
+    .messages({
+      'array.base': 'Gallery images must be an array of strings',
+      'string.base': 'Each gallery image must be a string',
     }),
 
   priceEditor: Joi.string().
@@ -172,7 +178,15 @@ const getAllYachtsSchema = Joi.object({});
 
 // For getYachtById, require 'id' as a string (in query or params)
 const getYachtByIdSchema = Joi.object({
-  id: Joi.string().required().messages({ 'any.required': 'Yacht ID is required' })
+  id: Joi.string()
+    .length(24)
+    .hex()
+    .required()
+    .messages({
+      'any.required': 'Yacht ID is required',
+      'string.length': 'ID must be a valid.',
+      'string.hex': 'ID must be a valid.'
+    })
 });
 
 export { addyachtSchema, getAllYachtsSchema, getYachtByIdSchema };
