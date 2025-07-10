@@ -20,12 +20,15 @@ const addyachtSchema = Joi.object({
   .messages({
      'any.required': 'Length is required' 
     }),
-  lengthRange: Joi.string()
-  .valid('< 40 ft', '40 To 60 ft', '60 To 80 ft', '> 80 ft')
+  lengthRange: Joi.array()
+  .items(Joi.string().valid('< 40 ft', '40 To 60 ft', '60 To 80 ft', '> 80 ft'))
+  .min(1)
   .required()
-  .messages({ 
-    'any.required': 'Length range is required' 
-    }),
+  .messages({
+    'any.required': 'At least one length range must be selected',
+    'array.base': 'Length range must be an array',
+    'any.only': 'Invalid length range value'
+  }),
   cabins: Joi.string()
   .required()
   .messages({
