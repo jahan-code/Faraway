@@ -42,7 +42,7 @@ export const sendEmail = async ({
     // Construct and validate template path
     const templatePath = path.join(
       __dirname,
-      '../templates',
+      '../Templates',
       `${templateName}.html`
     );
     try {
@@ -56,7 +56,7 @@ export const sendEmail = async ({
 
     // Configure email options
     const mailOptions = {
-      from: `Liquid-DMS <${process.env.SENDER_EMAIL}>`,
+      from: `Faraway <${process.env.SENDER_EMAIL}>`,
       to,
       subject,
       html: htmlContent,
