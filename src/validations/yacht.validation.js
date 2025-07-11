@@ -5,6 +5,10 @@ const addyachtSchema = Joi.object({
     'string.base': 'Boat type must be a string',
     'any.required': 'Boat type is required',
   }),
+  title: Joi.string().required().messages({
+    'any.required': 'Title is required',
+    'string.base': 'Title must be a string',
+  }),
   price: Joi.string()
   .required()
   .messages({
@@ -20,15 +24,14 @@ const addyachtSchema = Joi.object({
   .messages({
      'any.required': 'Length is required' 
     }),
-  lengthRange: Joi.array()
-  .items(Joi.string().valid('< 40 ft', '40 To 60 ft', '60 To 80 ft', '> 80 ft'))
-  .min(1)
-  .required()
-  .messages({
-    'any.required': 'At least one length range must be selected',
-    'array.base': 'Length range must be an array',
-    'any.only': 'Invalid length range value'
-  }),
+  lengthRange: Joi.string()
+    .valid('< 40 ft', '40 To 60 ft', '60 To 80 ft', '> 80 ft')
+    .required()
+    .messages({
+      'any.required': 'Length range is required',
+      'any.only': 'Invalid length range value',
+      'string.base': 'Length range must be a string',
+    }),
   cabins: Joi.string()
   .required()
   .messages({

@@ -3,6 +3,7 @@ import SuccessHandler from '../utils/SuccessHandler.js';
 import ApiError from '../utils/ApiError.js';
 import mapImageFilenamesToUrls from '../utils/mapImageFilenamesToUrls.js';
 import { getYachtByIdSchema, addyachtSchema } from '../validations/yacht.validation.js';
+import paginate from '../utils/paginate.js';
 
 // Add a new yacht
 export const addYacht = async (req, res, next) => {
@@ -32,9 +33,25 @@ export const addYacht = async (req, res, next) => {
 // Get all yachts
 export const getAllYachts = async (req, res, next) => {
   try {
-    const yachts = await Yacht.find();
+    const { page = 1, limit = 10 } = req.query;
+    const { skip, limit: parsedLimit } = paginate(page, limit);
+
+    const yachts = await Yacht.find().skip(skip).limit(parsedLimit);
+    const total = await Yacht.countDocuments();
+
     const yachtsWithUrls = mapImageFilenamesToUrls(yachts, req);
-    return SuccessHandler(yachtsWithUrls, 200, 'Yachts fetched successfully', res);
+    return SuccessHandler(
+      {
+        yachts: yachtsWithUrls,
+        page: Number(page),
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit)
+      },
+      200,
+      'Yachts fetched successfully',
+      res
+    );
   } catch (err) {
     next(new ApiError(err.message, 400));
   }

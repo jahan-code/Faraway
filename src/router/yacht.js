@@ -11,7 +11,6 @@ router.post('/add-yacht',verifyToken,
   , yachtController.addYacht);
 router.get('/all-yachts', verifyToken,yachtController.getAllYachts);
 router.get('/',verifyToken, yachtController.getYachtById);
-router.get('/userall-yachts',yachtController.getAllYachts);
-router.get('/', yachtController.getYachtById);
+
 
 export default router;
