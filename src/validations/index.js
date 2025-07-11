@@ -5,7 +5,7 @@ import {
     adminResetPasswordSchema,
     adminResendOtpSchema,
 } from './auth.validation.js';
-import { addyachtSchema, getAllYachtsSchema, getYachtByIdSchema } from './yacht.validation.js';
+import { addyachtSchema, deleteYachtSchema, getAllYachtsSchema, getYachtByIdSchema } from './yacht.validation.js';
 const validationSchemas = {
     // Authentication
     '/auth/admin/login': { POST: adminLoginSchema },
@@ -17,6 +17,7 @@ const validationSchemas = {
     '/yacht/add-yacht': { POST: addyachtSchema },
     '/yacht/all-yachts': { GET: getAllYachtsSchema },
     '/yacht': { GET: getYachtByIdSchema },
+    '/yacht/delete-yacht': { DELETE: deleteYachtSchema},
 };
 
 export { validationSchemas };

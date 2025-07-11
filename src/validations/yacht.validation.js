@@ -194,5 +194,15 @@ const getYachtByIdSchema = Joi.object({
       'string.hex': 'ID must be a valid.'
     })
 });
-
-export { addyachtSchema, getAllYachtsSchema, getYachtByIdSchema };
+const deleteYachtSchema = Joi.object({
+  id: Joi.string()
+  .length(24)
+  .hex()
+  .required()
+  .messages({
+    'any.required': 'Yacht ID is required',
+    'string.length': 'ID must be a valid.',
+    'string.hex': 'ID must be a valid.'
+  })
+});
+export { addyachtSchema, getAllYachtsSchema, getYachtByIdSchema,deleteYachtSchema };

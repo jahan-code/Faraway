@@ -1,37 +1,31 @@
 import multer from 'multer';
 import path from 'path';
+import os from 'os';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
-// Fix for __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const tempRoot = path.join(os.tmpdir(), 'uploads', 'Faraway', 'yachts');
 
-// ✅ Resolve the path to src/uploads
-const uploadDir = path.resolve(__dirname, '../uploads');
-
-// ✅ Create the uploads folder if it doesn't exist
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-  console.log('📁 Created uploads folder at:', uploadDir);
-}
-
-// 📦 Multer storage setup
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    console.log('📁 Saving to:', uploadDir);
-    cb(null, uploadDir);
+    let subfolder = '';
+    if (file.fieldname === 'primaryImage') {
+      subfolder = 'primaryImage';
+    } else if (file.fieldname === 'galleryImages') {
+      subfolder = 'galleryImages';
+    } else {
+      return cb(new Error('Unexpected upload field: ' + file.fieldname), null);
+    }
+    const dest = path.join(tempRoot, subfolder);
+    fs.mkdirSync(dest, { recursive: true }); // Ensure the folder exists
+    cb(null, dest);
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
     const finalName = Date.now() + '-' + file.fieldname + ext;
-    console.log(`📝 Filename set: ${finalName}`);
     cb(null, finalName);
   },
 });
 
-// ✅ Custom file filter for primaryImage
 const fileFilter = (req, file, cb) => {
   const field = file.fieldname;
   const imageTypes = ['image/jpeg', 'image/png'];
@@ -48,7 +42,6 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// 🚀 Final multer upload instance
 const upload = multer({
   storage,
   fileFilter,
