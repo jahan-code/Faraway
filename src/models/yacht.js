@@ -6,7 +6,7 @@ const yachtSchema = new mongoose.Schema({
   price: { type: String }, // e.g., Budget
   capacity: { type: String }, // e.g., Day Charter
   length: { type: String }, // e.g., 35sq
-  lengthRange: { type: String, enum: ['< 40 ft', '40 To 60 ft', '60 To 80 ft', '> 80 ft'] },
+  lengthRange: { type: String, enum: ['< 40', '40 To 60', '60 To 80', '> 80'] },
   cabins: { type: String }, // e.g., 1
   bathrooms: { type: String }, // e.g., 2
   passengerDayTrip: { type: String }, // e.g., 1

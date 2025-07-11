@@ -19,13 +19,9 @@ const addyachtSchema = Joi.object({
   .messages({
      'any.required': 'Capacity is required' 
     }),
-  length: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Length is required' 
-    }),
+  length: Joi.string().allow(''),
   lengthRange: Joi.string()
-    .valid('< 40 ft', '40 To 60 ft', '60 To 80 ft', '> 80 ft')
+    .valid('< 40', '40 To 60', '60 To 80', '> 80')
     .required()
     .messages({
       'any.required': 'Length range is required',
