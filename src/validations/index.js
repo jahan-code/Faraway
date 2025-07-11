@@ -17,8 +17,6 @@ const validationSchemas = {
     '/yacht/add-yacht': { POST: addyachtSchema },
     '/yacht/all-yachts': { GET: getAllYachtsSchema },
     '/yacht': { GET: getYachtByIdSchema },
-    '/yacht/user/all-yachts': { GET: getAllYachtsSchema },
-    '/yacht/user': { GET: getYachtByIdSchema },
 };
 
 export { validationSchemas };

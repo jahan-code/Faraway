@@ -9,8 +9,8 @@ router.post('/add-yacht',verifyToken,
     { name: 'galleryImages', maxCount: 10 }
   ])
   , yachtController.addYacht);
-router.get('/all-yachts', verifyToken,yachtController.getAllYachts);
-router.get('/',verifyToken, yachtController.getYachtById);
+router.get('/all-yachts',yachtController.getAllYachts);
+router.get('/', yachtController.getYachtById);
 
 
 export default router;
