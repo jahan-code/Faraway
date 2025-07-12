@@ -16,7 +16,15 @@ import cookieParser from 'cookie-parser';
 const startServer = async () => {
     try {
         app.use(
-            cors()
+            cors(
+                {
+                    origin: [
+                      'https://faraway-admin-panel.vercel.app',
+                      'http://localhost:3000',
+                    ],
+                    credentials: true,
+                  }
+            )
         );
         app.use(cookieParser());
         app.use(express.urlencoded({ extended: true }));
