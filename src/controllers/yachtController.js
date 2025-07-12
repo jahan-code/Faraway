@@ -9,33 +9,20 @@ import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
 // Add a new yacht
 export const addYacht = async (req, res, next) => {
   try {
-    console.log('🔍 addYacht called');
-    console.log('📁 req.files:', req.files);
-    console.log('📄 req.body:', req.body);
-    
     const yachtData = req.body;
 
     // Upload primaryImage to Cloudinary
     if (req.files && req.files.primaryImage && req.files.primaryImage[0]) {
-      console.log('📸 Processing primary image upload');
       try {
         const file = req.files.primaryImage[0];
-        console.log('📁 Primary image file:', file);
         yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
-        console.log('☁️ Primary image uploaded to Cloudinary:', yachtData.primaryImage);
       } catch (uploadError) {
-        console.error('❌ Primary image upload failed:', uploadError);
         return next(new ApiError(`Failed to upload primary image: ${uploadError.message}`, 400));
       }
-    } else {
-      console.log('❌ No primary image found in request');
-      // If no primary image is uploaded, return an error
-      return next(new ApiError('Primary image is required', 400));
     }
 
     // Upload galleryImages to Cloudinary
     if (req.files && req.files.galleryImages) {
-      console.log('🖼️ Processing gallery images upload');
       yachtData.galleryImages = [];
       for (const file of req.files.galleryImages) {
         try {
@@ -45,24 +32,18 @@ export const addYacht = async (req, res, next) => {
           return next(new ApiError(`Failed to upload gallery image: ${uploadError.message}`, 400));
         }
       }
-      console.log('☁️ Gallery images uploaded:', yachtData.galleryImages);
     }
 
-    console.log('✅ Final yachtData before validation:', yachtData);
-
-    // Now validate yachtData after file processing
+    // Now validate yachtData
     const { error } = addyachtSchema.validate(yachtData);
     if (error) {
-      console.error('❌ Validation error:', error.details[0].message);
       return next(new ApiError(error.details[0].message, 400));
     }
 
-    console.log('✅ Validation passed, creating yacht');
     const newYacht = await Yacht.create(yachtData);
     const yachtWithImageUrls = mapImageFilenamesToUrls(newYacht, req);
     return SuccessHandler(yachtWithImageUrls, 201, 'Yacht added successfully', res);
   } catch (err) {
-    console.error('❌ addYacht error:', err);
     next(new ApiError(err.message, 400));
   }
 };
@@ -139,5 +120,4 @@ export default {
   addYacht,
   getAllYachts,
   getYachtById,
-  deleteYacht,
 }; 

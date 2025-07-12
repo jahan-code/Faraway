@@ -14,7 +14,7 @@ const validationSchemas = {
     '/auth/admin/reset-password': { POST: adminResetPasswordSchema },
     '/auth/admin/resend-otp': { POST: adminResendOtpSchema },
     // Yacht
-    '/yacht/add-yacht': { POST: null }, // Skip validation - handled in controller after file upload
+    '/yacht/add-yacht': { POST: addyachtSchema },
     '/yacht/all-yachts': { GET: getAllYachtsSchema },
     '/yacht': { GET: getYachtByIdSchema },
     '/yacht/delete-yacht': { DELETE: deleteYachtSchema},
