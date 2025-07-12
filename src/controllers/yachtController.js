@@ -9,92 +9,46 @@ import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
 // Add a new yacht
 export const addYacht = async (req, res, next) => {
   try {
-    console.log('🔍 === YACHT UPLOAD DEBUG START ===');
-    console.log('📁 req.files:', JSON.stringify(req.files, null, 2));
-    console.log('📄 req.body:', JSON.stringify(req.body, null, 2));
-    console.log('🔑 req.headers:', JSON.stringify(req.headers, null, 2));
-    
     const yachtData = req.body;
 
     // Check if primary image is uploaded
     if (!req.files || !req.files.primaryImage || !req.files.primaryImage[0]) {
-      console.log('❌ No primary image found in request');
-      console.log('📁 req.files keys:', Object.keys(req.files || {}));
       return next(new ApiError('Primary image is required', 400));
     }
-
-    console.log('✅ Primary image found:', req.files.primaryImage[0]);
 
     // Upload primaryImage to Cloudinary
     if (req.files && req.files.primaryImage && req.files.primaryImage[0]) {
       try {
         const file = req.files.primaryImage[0];
-        console.log('📸 Uploading primary image to Cloudinary:', file.path);
-        
-        // Check if file exists
-        const fs = await import('fs/promises');
-        try {
-          await fs.access(file.path);
-          console.log('✅ Primary image file exists:', file.path);
-        } catch (accessError) {
-          console.error('❌ Primary image file does not exist:', file.path);
-          return next(new ApiError('Primary image file not found on server', 500));
-        }
-        
         yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
-        console.log('☁️ Primary image uploaded successfully:', yachtData.primaryImage);
       } catch (uploadError) {
-        console.error('❌ Primary image upload failed:', uploadError);
         return next(new ApiError(`Failed to upload primary image: ${uploadError.message}`, 400));
       }
     }
 
     // Upload galleryImages to Cloudinary
     if (req.files && req.files['galleryImages[]']) {
-      console.log('🖼️ Found gallery images:', req.files['galleryImages[]'].length);
       yachtData.galleryImages = [];
       for (const file of req.files['galleryImages[]']) {
         try {
-          console.log('📸 Uploading gallery image:', file.path);
-          
-          // Check if file exists
-          const fs = await import('fs/promises');
-          try {
-            await fs.access(file.path);
-            console.log('✅ Gallery image file exists:', file.path);
-          } catch (accessError) {
-            console.error('❌ Gallery image file does not exist:', file.path);
-            return next(new ApiError(`Gallery image file not found on server: ${file.path}`, 500));
-          }
-          
           const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
           yachtData.galleryImages.push(url);
-          console.log('☁️ Gallery image uploaded:', url);
         } catch (uploadError) {
-          console.error('❌ Gallery image upload failed:', uploadError);
           return next(new ApiError(`Failed to upload gallery image: ${uploadError.message}`, 400));
         }
       }
-    } else {
-      console.log('ℹ️ No gallery images found');
     }
-
-    console.log('✅ Final yachtData before validation:', JSON.stringify(yachtData, null, 2));
 
     // Now validate yachtData
     const { error } = addyachtSchema.validate(yachtData);
     if (error) {
-      console.error('❌ Validation error:', error.details[0].message);
       return next(new ApiError(error.details[0].message, 400));
     }
 
-    console.log('✅ Validation passed, creating yacht');
     const newYacht = await Yacht.create(yachtData);
     const yachtWithImageUrls = mapImageFilenamesToUrls(newYacht, req);
-    console.log('🎉 Yacht created successfully');
     return SuccessHandler(yachtWithImageUrls, 201, 'Yacht added successfully', res);
   } catch (err) {
-    console.error('❌ addYacht error:', err);
     next(new ApiError(err.message, 400));
   }
 };
