@@ -7,9 +7,14 @@ import { pathToRegexp } from 'path-to-regexp';
 const requestValidator = (req, res, next) => {
     try {
         const { method, originalUrl, body } = req;
+        console.log('🔍 Validation middleware - checking:', method, originalUrl);
+        console.log('📄 Content-Type:', req.get('Content-Type'));
+        
         if (originalUrl.startsWith('/uploads') || originalUrl === '/favicon.ico') {
+            console.log('✅ Skipping validation for uploads/favicon');
             return next();
         }
+        
         // Extract route path without query parameters
         const fullURL = originalUrl.split('?')[0];
         console.log(`🔍 Validating request: ${method} ${fullURL}`);
@@ -76,6 +81,7 @@ const requestValidator = (req, res, next) => {
             return next();
         }
 
+        console.log('📄 Validating body:', JSON.stringify(body, null, 2));
         const { error } = schema.validate(body, { abortEarly: false });
 
         if (error) {
