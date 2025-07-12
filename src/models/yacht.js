@@ -19,7 +19,7 @@ const yachtSchema = new mongoose.Schema({
   daytripPriceTHB: { type: String }, // e.g., 800 THB
   daytripPriceUSD: { type: String }, // e.g., 800 USD
   primaryImage: { type: String }, // Single image filename/URL
-  galleryImages: [{ type: String }], // Multiple image filenames/URLs
+  galleryImages: [String], // Multiple image filenames/URLs
   priceEditor: { type: String }, // Rich text (HTML/Markdown) from editor
   tripDetailsEditor: { type: String }, // Rich text (HTML/Markdown) from editor
   dayCharter: { type: String }, // Rich text (HTML/Markdown)
