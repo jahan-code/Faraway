@@ -13,16 +13,24 @@ export const addYacht = async (req, res, next) => {
 
     // Upload primaryImage to Cloudinary
     if (req.files && req.files.primaryImage && req.files.primaryImage[0]) {
-      const file = req.files.primaryImage[0];
-      yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
+      try {
+        const file = req.files.primaryImage[0];
+        yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
+      } catch (uploadError) {
+        return next(new ApiError(`Failed to upload primary image: ${uploadError.message}`, 400));
+      }
     }
 
     // Upload galleryImages to Cloudinary
     if (req.files && req.files.galleryImages) {
       yachtData.galleryImages = [];
       for (const file of req.files.galleryImages) {
-        const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
-        yachtData.galleryImages.push(url);
+        try {
+          const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
+          yachtData.galleryImages.push(url);
+        } catch (uploadError) {
+          return next(new ApiError(`Failed to upload gallery image: ${uploadError.message}`, 400));
+        }
       }
     }
 
