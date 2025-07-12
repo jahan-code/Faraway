@@ -32,13 +32,31 @@ export const addYacht = async (req, res, next) => {
       ...(req.files?.['galleryImages[]'] || []),
     ];
     
+    console.log('🖼️ Gallery images found:', galleryImageFiles.length);
+    console.log('📁 Gallery image files:', galleryImageFiles.map(f => ({ path: f.path, fieldname: f.fieldname, originalname: f.originalname })));
+    
     if (galleryImageFiles.length > 0) {
       yachtData.galleryImages = [];
       for (const file of galleryImageFiles) {
         try {
+          console.log('📸 Attempting to upload gallery image:', file.path);
+          
+          // Check if file exists
+          const fs = await import('fs/promises');
+          try {
+            await fs.access(file.path);
+            console.log('✅ Gallery image file exists:', file.path);
+          } catch (accessError) {
+            console.error('❌ Gallery image file does not exist:', file.path);
+            console.error('❌ Access error:', accessError.message);
+            return next(new ApiError(`Gallery image file not found: ${file.path}`, 500));
+          }
+          
           const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
           yachtData.galleryImages.push(url);
+          console.log('☁️ Gallery image uploaded successfully:', url);
         } catch (uploadError) {
+          console.error('❌ Gallery image upload failed:', uploadError);
           return next(new ApiError(`Failed to upload gallery image: ${uploadError.message}`, 400));
         }
       }

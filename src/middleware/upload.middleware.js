@@ -4,19 +4,24 @@ import os from 'os';
 import fs from 'fs';
 
 const tempRoot = path.join(os.tmpdir(), 'uploads', 'Faraway', 'yachts');
+console.log('📂 Temp root directory:', tempRoot);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    console.log('📁 Processing file:', file.fieldname, file.originalname);
     let subfolder = '';
     if (file.fieldname === 'primaryImage') {
       subfolder = 'primaryImage';
     } else if (file.fieldname === 'galleryImages' || file.fieldname === 'galleryImages[]') {
       subfolder = 'galleryImages';
     } else {
+      console.log('❌ Unexpected field name:', file.fieldname);
       return cb(new Error('Unexpected upload field: ' + file.fieldname), null);
     }
     const dest = path.join(tempRoot, subfolder);
+    console.log('📂 Creating directory:', dest);
     fs.mkdirSync(dest, { recursive: true }); // Ensure the folder exists
+    console.log('✅ Directory created/verified:', dest);
     cb(null, dest);
   },
   filename: function (req, file, cb) {
@@ -24,6 +29,8 @@ const storage = multer.diskStorage({
     // Remove brackets from fieldname for filename
     const cleanFieldName = file.fieldname.replace(/[\[\]]/g, '');
     const finalName = Date.now() + '-' + cleanFieldName + ext;
+    console.log('📝 Generated filename:', finalName);
+    console.log('📁 Full file path will be:', path.join(tempRoot, file.fieldname === 'primaryImage' ? 'primaryImage' : 'galleryImages', finalName));
     cb(null, finalName);
   },
 });
