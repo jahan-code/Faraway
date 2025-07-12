@@ -72,19 +72,15 @@ const addyachtSchema = Joi.object({
   daytripPriceTHB: Joi.string().allow(''),
   daytripPriceUSD: Joi.string().allow(''),
 
-  // primaryImage should be a string, not an array
-  primaryImage: Joi.string()
+  // primaryImage should exist (can be any type)
+  primaryImage: Joi.any()
+    .required()
     .messages({
-      'string.base': 'Primary image must be a string',
+      'any.required': 'Primary image is required',
     }),
 
-  // galleryImages should be an array of strings (optional)
-  galleryImages: Joi.array()
-    .items(Joi.string())
-    .messages({
-      'array.base': 'Gallery images must be an array of strings',
-      'string.base': 'Each gallery image must be a string',
-    }),
+  // galleryImages - no validation needed
+  galleryImages: Joi.any(),
 
   priceEditor: Joi.string().allow(''),
   tripDetailsEditor: Joi.string().allow(''),

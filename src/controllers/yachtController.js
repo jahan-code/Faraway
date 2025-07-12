@@ -11,6 +11,11 @@ export const addYacht = async (req, res, next) => {
   try {
     const yachtData = req.body;
 
+    // Check if primary image is uploaded
+    if (!req.files || !req.files.primaryImage || !req.files.primaryImage[0]) {
+      return next(new ApiError('Primary image is required', 400));
+    }
+
     // Upload primaryImage to Cloudinary
     if (req.files && req.files.primaryImage && req.files.primaryImage[0]) {
       try {

@@ -28,15 +28,10 @@ const storage = multer.diskStorage({
 
 const fileFilter = (req, file, cb) => {
   const field = file.fieldname;
-  const imageTypes = ['image/jpeg', 'image/png'];
-  const pdfTypes = ['application/pdf'];
 
   if (field === 'primaryImage' || field === 'galleryImages') {
-    if ([...imageTypes, ...pdfTypes].includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only JPEG, PNG, or PDF files are allowed'), false);
-    }
+    // Accept any file type for images
+    cb(null, true);
   } else {
     cb(new Error(`Unexpected upload field: ${field}`), false);
   }
