@@ -74,13 +74,16 @@ const addyachtSchema = Joi.object({
 
   // primaryImage should be a string, not an array
   primaryImage: Joi.string()
+    .required()
     .messages({
       'string.base': 'Primary image must be a string',
+      'any.required': 'Primary image is required',
     }),
 
   // galleryImages should be an array of strings (optional)
   galleryImages: Joi.array()
     .items(Joi.string())
+    .optional()
     .messages({
       'array.base': 'Gallery images must be an array of strings',
       'string.base': 'Each gallery image must be a string',

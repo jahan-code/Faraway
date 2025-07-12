@@ -10,6 +10,13 @@ const requestValidator = (req, res, next) => {
         if (originalUrl.startsWith('/uploads') || originalUrl === '/favicon.ico') {
             return next();
         }
+        
+        // Skip validation for yacht add route - validation is handled in controller after file upload
+        if (originalUrl === '/yacht/add-yacht' && method === 'POST') {
+            console.log(`📁 Skipping validation for yacht add route (file upload)`);
+            return next();
+        }
+        
         // Extract route path without query parameters
         const fullURL = originalUrl.split('?')[0];
         console.log(`🔍 Validating request: ${method} ${fullURL}`);
