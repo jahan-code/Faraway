@@ -105,11 +105,6 @@ const addyachtSchema = Joi.object({
   .messages({
      'any.required': 'Badge is required' 
     }),
-  yachtSpecifications: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Yacht specifications is required' 
-    }),
   design: Joi.string()
   .required()
   .messages({

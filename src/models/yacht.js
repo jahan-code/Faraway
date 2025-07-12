@@ -31,7 +31,6 @@ const yachtSchema = new mongoose.Schema({
   videoLink2: { type: String },
   videoLink3: { type: String },
   badge: { type: String },
-  yachtSpecifications: { type: String },
   design: { type: String },
   built: { type: String },
   cruisingSpeed: { type: String },
