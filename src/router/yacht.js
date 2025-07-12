@@ -7,7 +7,7 @@ const router = express.Router();
 router.post('/add-yacht',verifyToken,
     upload.fields([
     { name: 'primaryImage', maxCount: 1 },
-    { name: 'galleryImages', maxCount: 10 }
+    { name: 'galleryImages[]', maxCount: 10 }
   ])
   , yachtController.addYacht);
 router.get('/all-yachts',yachtController.getAllYachts);
