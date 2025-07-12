@@ -10,7 +10,7 @@ const storage = multer.diskStorage({
     let subfolder = '';
     if (file.fieldname === 'primaryImage') {
       subfolder = 'primaryImage';
-    } else if (file.fieldname === 'galleryImages') {
+    } else if (file.fieldname === 'galleryImages[]') {
       subfolder = 'galleryImages';
     } else {
       return cb(new Error('Unexpected upload field: ' + file.fieldname), null);
@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
   const field = file.fieldname;
 
-  if (field === 'primaryImage' || field === 'galleryImages') {
+  if (field === 'primaryImage' || field === 'galleryImages[]') {
     // Accept any file type for images
     cb(null, true);
   } else {

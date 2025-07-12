@@ -27,9 +27,9 @@ export const addYacht = async (req, res, next) => {
     }
 
     // Upload galleryImages to Cloudinary
-    if (req.files && req.files.galleryImages) {
+    if (req.files && req.files['galleryImages[]']) {
       yachtData.galleryImages = [];
-      for (const file of req.files.galleryImages) {
+      for (const file of req.files['galleryImages[]']) {
         try {
           const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
           yachtData.galleryImages.push(url);
