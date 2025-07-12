@@ -28,7 +28,9 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname);
     // Remove brackets from fieldname for filename
     const cleanFieldName = file.fieldname.replace(/[\[\]]/g, '');
-    const finalName = Date.now() + '-' + cleanFieldName + ext;
+    // Add unique identifier to prevent filename collisions
+    const uniqueId = Math.random().toString(36).substring(2, 15);
+    const finalName = Date.now() + '-' + cleanFieldName + '-' + uniqueId + ext;
     console.log('📝 Generated filename:', finalName);
     console.log('📁 Full file path will be:', path.join(tempRoot, file.fieldname === 'primaryImage' ? 'primaryImage' : 'galleryImages', finalName));
     cb(null, finalName);
