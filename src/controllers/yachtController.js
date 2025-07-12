@@ -82,7 +82,7 @@ export const getAllYachts = async (req, res, next) => {
     const { page = 1, limit = 10 } = req.query;
     const { skip, limit: parsedLimit } = paginate(page, limit);
 
-    const yachts = await Yacht.find().skip(skip).limit(parsedLimit);
+    const yachts = await Yacht.find().sort({ createdAt: -1 }).skip(skip).limit(parsedLimit);
     const total = await Yacht.countDocuments();
 
     const yachtsWithUrls = mapImageFilenamesToUrls(yachts, req);
