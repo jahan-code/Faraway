@@ -20,12 +20,16 @@ const storage = multer.diskStorage({
     const dest = path.join(tempRoot, subfolder);
     console.log('📂 Creating directory:', dest);
     fs.mkdirSync(dest, { recursive: true }); // Ensure the folder exists
+    console.log('✅ Directory created/verified:', dest);
     cb(null, dest);
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
-    const finalName = Date.now() + '-' + file.fieldname + ext;
+    // Remove brackets from fieldname for filename
+    const cleanFieldName = file.fieldname.replace(/[\[\]]/g, '');
+    const finalName = Date.now() + '-' + cleanFieldName + ext;
     console.log('📝 Generated filename:', finalName);
+    console.log('📁 Full file path will be:', path.join(tempRoot, file.fieldname === 'primaryImage' ? 'primaryImage' : 'galleryImages', finalName));
     cb(null, finalName);
   },
 });

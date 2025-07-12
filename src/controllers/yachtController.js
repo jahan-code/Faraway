@@ -30,6 +30,17 @@ export const addYacht = async (req, res, next) => {
       try {
         const file = req.files.primaryImage[0];
         console.log('📸 Uploading primary image to Cloudinary:', file.path);
+        
+        // Check if file exists
+        const fs = await import('fs/promises');
+        try {
+          await fs.access(file.path);
+          console.log('✅ Primary image file exists:', file.path);
+        } catch (accessError) {
+          console.error('❌ Primary image file does not exist:', file.path);
+          return next(new ApiError('Primary image file not found on server', 500));
+        }
+        
         yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
         console.log('☁️ Primary image uploaded successfully:', yachtData.primaryImage);
       } catch (uploadError) {
@@ -45,6 +56,17 @@ export const addYacht = async (req, res, next) => {
       for (const file of req.files['galleryImages[]']) {
         try {
           console.log('📸 Uploading gallery image:', file.path);
+          
+          // Check if file exists
+          const fs = await import('fs/promises');
+          try {
+            await fs.access(file.path);
+            console.log('✅ Gallery image file exists:', file.path);
+          } catch (accessError) {
+            console.error('❌ Gallery image file does not exist:', file.path);
+            return next(new ApiError(`Gallery image file not found on server: ${file.path}`, 500));
+          }
+          
           const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
           yachtData.galleryImages.push(url);
           console.log('☁️ Gallery image uploaded:', url);
