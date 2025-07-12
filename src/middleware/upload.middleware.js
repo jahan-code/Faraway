@@ -21,7 +21,9 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
-    const finalName = Date.now() + '-' + file.fieldname + ext;
+    // Remove brackets from fieldname for filename
+    const cleanFieldName = file.fieldname.replace(/[\[\]]/g, '');
+    const finalName = Date.now() + '-' + cleanFieldName + ext;
     cb(null, finalName);
   },
 });
