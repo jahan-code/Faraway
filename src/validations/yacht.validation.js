@@ -86,41 +86,13 @@ const addyachtSchema = Joi.object({
       'string.base': 'Each gallery image must be a string',
     }),
 
-  priceEditor: Joi.string().
-  required()
-  .messages({
-     'any.required': 'Price editor is required' 
-    }),
-  tripDetailsEditor: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Trip details editor is required' 
-    }),
-  dayCharter: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Day charter is required' 
-    }),
-  overnightCharter: Joi.string()
-  .required().
-  messages({
-     'any.required': 'Overnight charter is required' 
-    }),
-  aboutThisBoat: Joi.string()
-  .required().
-  messages({ 
-    'any.required': 'About this boat is required' 
-  }),
-  specifications: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Specifications is required' 
-    }),
-  boatLayout: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Boat layout is required' 
-    }),
+  priceEditor: Joi.string().allow(''),
+  tripDetailsEditor: Joi.string().allow(''),
+  dayCharter: Joi.string().allow(''),
+  overnightCharter: Joi.string().allow(''),
+  aboutThisBoat: Joi.string().allow(''),
+  specifications: Joi.string().allow(''),
+  boatLayout: Joi.string().allow(''),
   videoLink: Joi.string()
   .required()
   .messages({
