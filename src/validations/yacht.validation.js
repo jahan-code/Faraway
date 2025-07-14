@@ -96,11 +96,8 @@ const addyachtSchema = Joi.object({
     }),
   videoLink2: Joi.string().allow(''),
   videoLink3: Joi.string().allow(''),
-  badge: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Badge is required' 
-    }),
+  badge: Joi.string().allow(''),
+  
   design: Joi.string()
   .required()
   .messages({
@@ -131,11 +128,7 @@ const addyachtSchema = Joi.object({
   .messages({
      'any.required': 'Water capacity is required' 
     }),
-  code: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Code is required' 
-    }),
+  code: Joi.string().allow(''),
 });
 
 // No validation needed for getAllYachts
