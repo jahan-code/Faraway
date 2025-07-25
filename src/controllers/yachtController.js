@@ -124,26 +124,6 @@ export const getYachtById = async (req, res, next) => {
     next(new ApiError(err.message, 400));
   }
 };
-export const getBareboatYachts = async (req, res, next) => {
-  try {
-    const yachts = await Yacht.find({ type: 'bareboat' });
-    const yachtsWithUrls = mapImageFilenamesToUrls(yachts, req);
-    return SuccessHandler(yachtsWithUrls, 200, 'Bareboat yachts fetched successfully', res);
-  } catch (err) {
-    next(new ApiError(err.message, 400));
-  }
-};
-
-// Get only crewed yachts
-export const getCrewedYachts = async (req, res, next) => {
-  try {
-    const yachts = await Yacht.find({ type: 'crewed' });
-    const yachtsWithUrls = mapImageFilenamesToUrls(yachts, req);
-    return SuccessHandler(yachtsWithUrls, 200, 'Crewed yachts fetched successfully', res);
-  } catch (err) {
-    next(new ApiError(err.message, 400));
-  }
-};
 export const deleteYacht = async (req, res, next) => {
   try {
     const { error } = getYachtByIdSchema.validate(req.query);
@@ -167,7 +147,5 @@ export default {
   addYacht,
   getAllYachts,
   getYachtById,
-  getBareboatYachts,
-  getCrewedYachts,
   deleteYacht,
 }; 
