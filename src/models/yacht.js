@@ -38,6 +38,11 @@ const yachtSchema = new mongoose.Schema({
   fuelCapacity: { type: String },
   waterCapacity: { type: String },
   code: { type: String },
+  type: {
+    type: String,
+    enum: ['crewed', 'bareboat'],
+    required: true,
+  },
   createdAt: { type: Date, default: Date.now }
 });
 export default mongoose.model('Yacht', yachtSchema);

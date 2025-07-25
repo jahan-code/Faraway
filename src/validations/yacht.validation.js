@@ -123,6 +123,13 @@ const addyachtSchema = Joi.object({
   .messages({
      'any.required': 'Fuel capacity is required' 
     }),
+    type: Joi.string()
+  .valid('crewed', 'bareboat')
+  .required()
+  .messages({
+    'any.required': 'Yacht type is required',
+    'any.only': 'Yacht type must be either crewed or bareboat',
+  }),
   waterCapacity: Joi.string()
   .required()
   .messages({

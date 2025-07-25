@@ -18,6 +18,8 @@ const validationSchemas = {
     '/yacht/all-yachts': { GET: getAllYachtsSchema },
     '/yacht': { GET: getYachtByIdSchema },
     '/yacht/delete-yacht': { DELETE: deleteYachtSchema},
+    '/yacht/bareboat-yachts': { GET: null },
+    '/yacht/crewed-yachts': { GET: null },
 };
 
 export { validationSchemas };

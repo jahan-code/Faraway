@@ -14,6 +14,7 @@ router.post('/add-yacht',verifyToken,
 router.get('/all-yachts',yachtController.getAllYachts);
 router.get('/', yachtController.getYachtById);
 router.delete('/delete-yacht', verifyToken, deleteYacht);
-
+router.get('/bareboat-yachts', yachtController.getBareboatYachts);
+router.get('/crewed-yachts', yachtController.getCrewedYachts);
 
 export default router;
