@@ -164,4 +164,62 @@ const deleteYachtSchema = Joi.object({
     'string.hex': 'ID must be a valid.'
   })
 });
-export { addyachtSchema, getAllYachtsSchema, getYachtByIdSchema,deleteYachtSchema };
+
+// Edit yacht schema - all fields are optional for partial updates
+const editYachtSchema = Joi.object({
+  boatType: Joi.string().optional().messages({
+    'string.base': 'Boat type must be a string',
+  }),
+  title: Joi.string().optional().messages({
+    'string.base': 'Title must be a string',
+  }),
+  price: Joi.string().optional(),
+  capacity: Joi.string().optional(),
+  length: Joi.string().allow('').optional(),
+  lengthRange: Joi.string()
+    .valid('< 40', '40 To 60', '60 To 80', '> 80')
+    .optional()
+    .messages({
+      'any.only': 'Invalid length range value',
+      'string.base': 'Length range must be a string',
+    }),
+  cabins: Joi.string().optional(),
+  bathrooms: Joi.string().optional(),
+  passengerDayTrip: Joi.string().optional(),
+  passengerOvernight: Joi.string().optional(),
+  guests: Joi.string().optional(),
+  guestsRange: Joi.string().optional(),
+  dayTripPrice: Joi.string().optional(),
+  overnightPrice: Joi.string().optional(),
+  daytripPriceEuro: Joi.string().allow('').optional(),
+  daytripPriceTHB: Joi.string().allow('').optional(),
+  daytripPriceUSD: Joi.string().allow('').optional(),
+  primaryImage: Joi.string().optional(),
+  galleryImages: Joi.array().items(Joi.string()).optional(),
+  priceEditor: Joi.string().allow('').optional(),
+  tripDetailsEditor: Joi.string().allow('').optional(),
+  dayCharter: Joi.string().allow('').optional(),
+  overnightCharter: Joi.string().allow('').optional(),
+  aboutThisBoat: Joi.string().allow('').optional(),
+  specifications: Joi.string().allow('').optional(),
+  boatLayout: Joi.string().allow('').optional(),
+  videoLink: Joi.string().optional(),
+  videoLink2: Joi.string().allow('').optional(),
+  videoLink3: Joi.string().allow('').optional(),
+  badge: Joi.string().allow('').optional(),
+  design: Joi.string().optional(),
+  built: Joi.string().optional(),
+  cruisingSpeed: Joi.string().optional(),
+  lengthOverall: Joi.string().optional(),
+  fuelCapacity: Joi.string().optional(),
+  waterCapacity: Joi.string().optional(),
+  code: Joi.string().allow('').optional(),
+  type: Joi.string()
+    .valid('crewed', 'bareboat')
+    .optional()
+    .messages({
+      'any.only': 'Yacht type must be either crewed or bareboat',
+    }),
+});
+
+export { addyachtSchema, getAllYachtsSchema, getYachtByIdSchema, deleteYachtSchema, editYachtSchema };

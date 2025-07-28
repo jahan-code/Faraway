@@ -2,7 +2,7 @@ import Yacht from '../models/yacht.js';
 import SuccessHandler from '../utils/SuccessHandler.js';
 import ApiError from '../utils/ApiError.js';
 import mapImageFilenamesToUrls from '../utils/mapImageFilenamesToUrls.js';
-import { getYachtByIdSchema, addyachtSchema } from '../validations/yacht.validation.js';
+import { getYachtByIdSchema, addyachtSchema, editYachtSchema } from '../validations/yacht.validation.js';
 import paginate from '../utils/paginate.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
 
@@ -143,9 +143,79 @@ export const deleteYacht = async (req, res, next) => {
   }
 };
 
+// Edit yacht by ID
+export const editYacht = async (req, res, next) => {
+  try {
+    const { id } = req.query;
+    const yachtData = req.body;
+
+    // Validate yacht ID
+    const { error: idError } = getYachtByIdSchema.validate({ id });
+    if (idError) {
+      return next(new ApiError(idError.details[0].message, 400));
+    }
+
+    // Check if yacht exists
+    const existingYacht = await Yacht.findById(id);
+    if (!existingYacht) {
+      return next(new ApiError('Yacht not found', 404));
+    }
+
+    // Handle primary image upload if provided
+    if (req.files && req.files.primaryImage && req.files.primaryImage[0]) {
+      try {
+        const file = req.files.primaryImage[0];
+        yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
+      } catch (uploadError) {
+        return next(new ApiError(`Failed to upload primary image: ${uploadError.message}`, 400));
+      }
+    }
+
+    // Handle gallery images upload if provided
+    const galleryImageFiles = [
+      ...(req.files?.galleryImages || []),
+      ...(req.files?.['galleryImages[]'] || []),
+    ];
+    
+    if (galleryImageFiles.length > 0) {
+      const newGalleryImages = [];
+      for (const file of galleryImageFiles) {
+        try {
+          const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
+          newGalleryImages.push(url);
+        } catch (uploadError) {
+          return next(new ApiError(`Failed to upload gallery image: ${uploadError.message}`, 400));
+        }
+      }
+      
+      // If new gallery images are provided, replace the existing ones
+      yachtData.galleryImages = newGalleryImages;
+    }
+
+    // Validate yacht data (make all fields optional for editing)
+    const { error: validationError } = editYachtSchema.validate(yachtData);
+    if (validationError) {
+      return next(new ApiError(validationError.details[0].message, 400));
+    }
+
+    // Update the yacht
+    const updatedYacht = await Yacht.findByIdAndUpdate(
+      id,
+      yachtData,
+      { new: true, runValidators: true }
+    );
+
+    const yachtWithImageUrls = mapImageFilenamesToUrls(updatedYacht, req);
+    return SuccessHandler(yachtWithImageUrls, 200, 'Yacht updated successfully', res);
+  } catch (err) {
+    next(new ApiError(err.message, 400));
+  }
+};
+
 export default {
   addYacht,
   getAllYachts,
   getYachtById,
   deleteYacht,
+  editYacht,
 }; 
