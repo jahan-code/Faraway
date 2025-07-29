@@ -27,7 +27,9 @@ const yachtSchema = new mongoose.Schema({
   aboutThisBoat: { type: String }, // Rich text (HTML/Markdown)
   specifications: { type: String }, // Rich text (HTML/Markdown)
   boatLayout: { type: String }, // Rich text (HTML/Markdown)
-  videoLinks: [String], // Array of video links e.g., ["http://www.youtube.com/watch?v=abc", "http://vimeo.com/123"]
+  videoLink: { type: String }, // e.g., http://www.youtube.com
+  videoLink2: { type: String },
+  videoLink3: { type: String },
   badge: { type: String },
   design: { type: String },
   built: { type: String },

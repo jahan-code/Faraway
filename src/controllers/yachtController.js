@@ -5,7 +5,7 @@ import mapImageFilenamesToUrls from '../utils/mapImageFilenamesToUrls.js';
 import { getYachtByIdSchema, addyachtSchema, editYachtSchema } from '../validations/yacht.validation.js';
 import paginate from '../utils/paginate.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
-import { migrateVideoLinks, cleanupOldVideoFields } from '../utils/migrateVideoLinks.js';
+
 
 // Add a new yacht
 export const addYacht = async (req, res, next) => {
@@ -63,17 +63,13 @@ export const addYacht = async (req, res, next) => {
       }
     }
 
-    // Migrate video links if needed
-    const migratedData = cleanupOldVideoFields(yachtData);
-    migratedData.videoLinks = migrateVideoLinks(yachtData);
-
     // Now validate yachtData
-    const { error } = addyachtSchema.validate(migratedData);
+    const { error } = addyachtSchema.validate(yachtData);
     if (error) {
       return next(new ApiError(error.details[0].message, 400));
     }
 
-    const newYacht = await Yacht.create(migratedData);
+    const newYacht = await Yacht.create(yachtData);
     const yachtWithImageUrls = mapImageFilenamesToUrls(newYacht, req);
     return SuccessHandler(yachtWithImageUrls, 201, 'Yacht added successfully', res);
   } catch (err) {
@@ -197,15 +193,8 @@ export const editYacht = async (req, res, next) => {
       yachtData.galleryImages = newGalleryImages;
     }
 
-    // Migrate video links if needed
-    let finalData = yachtData;
-    if (yachtData.videoLinks || yachtData.videoLink || yachtData.videoLink2 || yachtData.videoLink3) {
-      finalData = cleanupOldVideoFields(yachtData);
-      finalData.videoLinks = migrateVideoLinks(yachtData);
-    }
-
     // Validate yacht data (make all fields optional for editing)
-    const { error: validationError } = editYachtSchema.validate(finalData);
+    const { error: validationError } = editYachtSchema.validate(yachtData);
     if (validationError) {
       return next(new ApiError(validationError.details[0].message, 400));
     }
@@ -213,7 +202,7 @@ export const editYacht = async (req, res, next) => {
     // Update the yacht
     const updatedYacht = await Yacht.findByIdAndUpdate(
       id,
-      finalData,
+      yachtData,
       { new: true, runValidators: true }
     );
 

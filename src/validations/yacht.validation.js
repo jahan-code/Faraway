@@ -89,12 +89,13 @@ const addyachtSchema = Joi.object({
   aboutThisBoat: Joi.string().allow(''),
   specifications: Joi.string().allow(''),
   boatLayout: Joi.string().allow(''),
-  videoLinks: Joi.array().items(Joi.string().uri().allow('')).min(1).required().messages({
-    'any.required': 'Video links are required',
-    'array.base': 'Video links must be an array',
-    'string.uri': 'Each video link must be a valid URL',
-    'array.min': 'At least one video link is required'
-  }),
+  videoLink: Joi.string()
+  .required()
+  .messages({
+     'any.required': 'Video link is required' 
+    }),
+  videoLink2: Joi.string().allow(''),
+  videoLink3: Joi.string().allow(''),
   badge: Joi.string().allow(''),
   
   design: Joi.string()
@@ -202,10 +203,9 @@ const editYachtSchema = Joi.object({
   aboutThisBoat: Joi.string().allow('').optional(),
   specifications: Joi.string().allow('').optional(),
   boatLayout: Joi.string().allow('').optional(),
-  videoLinks: Joi.array().items(Joi.string().uri().allow('')).optional().messages({
-    'array.base': 'Video links must be an array',
-    'string.uri': 'Each video link must be a valid URL'
-  }),
+  videoLink: Joi.string().optional(),
+  videoLink2: Joi.string().allow('').optional(),
+  videoLink3: Joi.string().allow('').optional(),
   badge: Joi.string().allow('').optional(),
   design: Joi.string().optional(),
   built: Joi.string().optional(),
