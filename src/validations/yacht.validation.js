@@ -2,8 +2,8 @@ import Joi from 'joi';
 
 const addyachtSchema = Joi.object({
   boatType: Joi.string().required().messages({
-    'string.base': 'Boat type must be a string',
-    'any.required': 'Boat type is required',
+    'string.base': 'Boat Type must be a string',
+    'any.required': 'Boat Type is required',
   }),
   title: Joi.string().required().messages({
     'any.required': 'Title is required',
@@ -17,17 +17,14 @@ const addyachtSchema = Joi.object({
   capacity: Joi.string()
   .required()
   .messages({
-     'any.required': 'Capacity is required' 
+     'any.required': 'Category is required' 
     }),
-  length: Joi.string().allow(''),
-  lengthRange: Joi.string()
-    .valid('< 40', '40 To 60', '60 To 80', '> 80')
-    .required()
-    .messages({
-      'any.required': 'Length range is required',
-      'any.only': 'Invalid length range value',
-      'string.base': 'Length range must be a string',
+  length: Joi.string()
+  .required()
+  .messages({
+     'any.required': 'Length is required' 
     }),
+  lengthRange: Joi.string().allow('').optional(),
   cabins: Joi.string()
   .required()
   .messages({
@@ -41,12 +38,12 @@ const addyachtSchema = Joi.object({
   passengerDayTrip: Joi.string()
   .required()
   .messages({
-     'any.required': 'Passenger day trip is required' 
+     'any.required': 'Passenger Day Trip is required' 
     }),
   passengerOvernight: Joi.string()
   .required()
   .messages({
-     'any.required': 'Passenger overnight is required' 
+     'any.required': 'Passenger Overnight is required' 
     }),
   guests: Joi.string()
   .required()
@@ -56,21 +53,23 @@ const addyachtSchema = Joi.object({
   guestsRange: Joi.string()
   .required()
   .messages({
-     'any.required': 'Guests range is required' 
+     'any.required': 'Guests Range is required' 
     }),
   dayTripPrice: Joi.string()
   .required()
   .messages({
-     'any.required': 'Day trip price is required' 
+     'any.required': 'Day Trip Price is required' 
     }),
   overnightPrice: Joi.string()
   .required()
   .messages({ 
-    'any.required': 'Overnight price is required' 
+    'any.required': 'Overnight Price is required' 
     }),
-  daytripPriceEuro: Joi.string().allow(''),
-  daytripPriceTHB: Joi.string().allow(''),
-  daytripPriceUSD: Joi.string().allow(''),
+  daytripPriceEuro: Joi.string()
+  .required()
+  .messages({
+     'any.required': 'Daytrip Price (Euro) is required' 
+    }),
 
   // primaryImage should exist (can be any type)
   primaryImage: Joi.any()
@@ -82,43 +81,19 @@ const addyachtSchema = Joi.object({
   // galleryImages - no validation needed
   galleryImages: Joi.any(),
 
-  priceEditor: Joi.string().allow(''),
-  tripDetailsEditor: Joi.string().allow(''),
   dayCharter: Joi.string().allow(''),
   overnightCharter: Joi.string().allow(''),
   aboutThisBoat: Joi.string().allow(''),
   specifications: Joi.string().allow(''),
   boatLayout: Joi.string().allow(''),
   videoLink: Joi.string().allow(''),
-  videoLink2: Joi.string().allow(''),
-  videoLink3: Joi.string().allow(''),
   badge: Joi.string().allow(''),
   
-  design: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Design is required'
-     }),
-  built: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Built is required' 
-    }),
-  cruisingSpeed: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Cruising speed is required' 
-    }),
-  lengthOverall: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Length overall is required' 
-    }),
-  fuelCapacity: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Fuel capacity is required' 
-    }),
+  design: Joi.string().allow('').optional(),
+  built: Joi.string().allow('').optional(),
+  cruisingSpeed: Joi.string().allow('').optional(),
+  lengthOverall: Joi.string().allow('').optional(),
+  fuelCapacity: Joi.string().allow('').optional(),
     type: Joi.string()
   .valid('crewed', 'bareboat')
   .required()
@@ -126,12 +101,8 @@ const addyachtSchema = Joi.object({
     'any.required': 'Yacht type is required',
     'any.only': 'Yacht type must be either crewed or bareboat',
   }),
-  waterCapacity: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Water capacity is required' 
-    }),
-  code: Joi.string().allow(''),
+  waterCapacity: Joi.string().allow('').optional(),
+  code: Joi.string().allow('').optional(),
 });
 
 // No validation needed for getAllYachts
@@ -172,13 +143,7 @@ const editYachtSchema = Joi.object({
   price: Joi.string().optional(),
   capacity: Joi.string().optional(),
   length: Joi.string().allow('').optional(),
-  lengthRange: Joi.string()
-    .valid('< 40', '40 To 60', '60 To 80', '> 80')
-    .optional()
-    .messages({
-      'any.only': 'Invalid length range value',
-      'string.base': 'Length range must be a string',
-    }),
+  lengthRange: Joi.string().allow('').optional(),
   cabins: Joi.string().optional(),
   bathrooms: Joi.string().optional(),
   passengerDayTrip: Joi.string().optional(),
@@ -188,20 +153,14 @@ const editYachtSchema = Joi.object({
   dayTripPrice: Joi.string().optional(),
   overnightPrice: Joi.string().optional(),
   daytripPriceEuro: Joi.string().allow('').optional(),
-  daytripPriceTHB: Joi.string().allow('').optional(),
-  daytripPriceUSD: Joi.string().allow('').optional(),
   primaryImage: Joi.string().optional(),
   galleryImages: Joi.array().items(Joi.string()).optional(),
-  priceEditor: Joi.string().allow('').optional(),
-  tripDetailsEditor: Joi.string().allow('').optional(),
   dayCharter: Joi.string().allow('').optional(),
   overnightCharter: Joi.string().allow('').optional(),
   aboutThisBoat: Joi.string().allow('').optional(),
   specifications: Joi.string().allow('').optional(),
   boatLayout: Joi.string().allow('').optional(),
   videoLink: Joi.string().optional(),
-  videoLink2: Joi.string().allow('').optional(),
-  videoLink3: Joi.string().allow('').optional(),
   badge: Joi.string().allow('').optional(),
   design: Joi.string().optional(),
   built: Joi.string().optional(),
