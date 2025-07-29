@@ -5,11 +5,12 @@ import mapImageFilenamesToUrls from '../utils/mapImageFilenamesToUrls.js';
 import { getYachtByIdSchema, addyachtSchema, editYachtSchema } from '../validations/yacht.validation.js';
 import paginate from '../utils/paginate.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
+import { migrateVideoLinks, cleanupOldVideoFields } from '../utils/migrateVideoLinks.js';
 
 // Add a new yacht
 export const addYacht = async (req, res, next) => {
   try {
-    const yachtData = req.body;
+    let yachtData = req.body;
 
     // Check if primary image is uploaded
     if (!req.files || !req.files.primaryImage || !req.files.primaryImage[0]) {
@@ -62,13 +63,17 @@ export const addYacht = async (req, res, next) => {
       }
     }
 
+    // Migrate video links if needed
+    const migratedData = cleanupOldVideoFields(yachtData);
+    migratedData.videoLinks = migrateVideoLinks(yachtData);
+
     // Now validate yachtData
-    const { error } = addyachtSchema.validate(yachtData);
+    const { error } = addyachtSchema.validate(migratedData);
     if (error) {
       return next(new ApiError(error.details[0].message, 400));
     }
 
-    const newYacht = await Yacht.create(yachtData);
+    const newYacht = await Yacht.create(migratedData);
     const yachtWithImageUrls = mapImageFilenamesToUrls(newYacht, req);
     return SuccessHandler(yachtWithImageUrls, 201, 'Yacht added successfully', res);
   } catch (err) {
@@ -147,7 +152,7 @@ export const deleteYacht = async (req, res, next) => {
 export const editYacht = async (req, res, next) => {
   try {
     const { id } = req.query;
-    const yachtData = req.body;
+    let yachtData = req.body;
 
     // Validate yacht ID
     const { error: idError } = getYachtByIdSchema.validate({ id });
@@ -161,7 +166,7 @@ export const editYacht = async (req, res, next) => {
       return next(new ApiError('Yacht not found', 404));
     }
 
-    // Handle primary image upload if provided
+    // Handle primary image upload if provided (file upload or base64 string)
     if (req.files && req.files.primaryImage && req.files.primaryImage[0]) {
       try {
         const file = req.files.primaryImage[0];
@@ -171,7 +176,7 @@ export const editYacht = async (req, res, next) => {
       }
     }
 
-    // Handle gallery images upload if provided
+    // Handle gallery images upload if provided (file upload or base64 strings)
     const galleryImageFiles = [
       ...(req.files?.galleryImages || []),
       ...(req.files?.['galleryImages[]'] || []),
@@ -192,8 +197,15 @@ export const editYacht = async (req, res, next) => {
       yachtData.galleryImages = newGalleryImages;
     }
 
+    // Migrate video links if needed
+    let finalData = yachtData;
+    if (yachtData.videoLinks || yachtData.videoLink || yachtData.videoLink2 || yachtData.videoLink3) {
+      finalData = cleanupOldVideoFields(yachtData);
+      finalData.videoLinks = migrateVideoLinks(yachtData);
+    }
+
     // Validate yacht data (make all fields optional for editing)
-    const { error: validationError } = editYachtSchema.validate(yachtData);
+    const { error: validationError } = editYachtSchema.validate(finalData);
     if (validationError) {
       return next(new ApiError(validationError.details[0].message, 400));
     }
@@ -201,7 +213,7 @@ export const editYacht = async (req, res, next) => {
     // Update the yacht
     const updatedYacht = await Yacht.findByIdAndUpdate(
       id,
-      yachtData,
+      finalData,
       { new: true, runValidators: true }
     );
 
