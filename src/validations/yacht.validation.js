@@ -89,11 +89,7 @@ const addyachtSchema = Joi.object({
   aboutThisBoat: Joi.string().allow(''),
   specifications: Joi.string().allow(''),
   boatLayout: Joi.string().allow(''),
-  videoLink: Joi.string()
-  .required()
-  .messages({
-     'any.required': 'Video link is required' 
-    }),
+  videoLink: Joi.string().allow(''),
   videoLink2: Joi.string().allow(''),
   videoLink3: Joi.string().allow(''),
   badge: Joi.string().allow(''),
