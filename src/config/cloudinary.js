@@ -20,6 +20,7 @@ cloudinary.config({
   cloud_name: cloudName,
   api_key: apiKey,
   api_secret: apiSecret,
+  timeout: 60000, // 60 seconds timeout
 });
 
 export default cloudinary;

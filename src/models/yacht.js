@@ -32,10 +32,20 @@ const yachtSchema = new mongoose.Schema({
   fuelCapacity: { type: String },
   waterCapacity: { type: String },
   code: { type: String },
+  slug: {
+    type: String,
+    unique: true,
+    required: true,
+  },
   type: {
     type: String,
     enum: ['crewed', 'bareboat'],
     required: true,
+  },
+  status: {
+    type: String,
+    enum: ['draft', 'published'],
+    default: 'draft'
   },
   createdAt: { type: Date, default: Date.now }
 });

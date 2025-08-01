@@ -21,8 +21,42 @@ export const addYacht = async (req, res, next) => {
     if (req.files && req.files.primaryImage && req.files.primaryImage[0]) {
       try {
         const file = req.files.primaryImage[0];
+        
+        // Check file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+          return next(new ApiError(`Primary image file size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of 10MB`, 400));
+        }
+        
+        console.log(`📸 Uploading primary image: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+        console.log(`📁 File path: ${file.path}`);
+        
+        // Small delay to ensure file is fully written
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify file exists before uploading
+        const fs = await import('fs/promises');
+        try {
+          await fs.access(file.path);
+          console.log('✅ Primary image file exists and is accessible');
+          
+          // Get file stats to verify it's not empty
+          const stats = await fs.stat(file.path);
+          console.log(`📊 File size: ${stats.size} bytes`);
+          
+          if (stats.size === 0) {
+            return next(new ApiError('Primary image file is empty', 400));
+          }
+        } catch (accessError) {
+          console.error('❌ Primary image file does not exist:', file.path);
+          console.error('❌ Access error:', accessError.message);
+          return next(new ApiError(`Primary image file not found: ${file.path}`, 500));
+        }
+        
         yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
+        console.log(`✅ Primary image uploaded successfully: ${yachtData.primaryImage}`);
       } catch (uploadError) {
+        console.error(`❌ Primary image upload failed:`, uploadError);
         return next(new ApiError(`Failed to upload primary image: ${uploadError.message}`, 400));
       }
     }
@@ -38,29 +72,35 @@ export const addYacht = async (req, res, next) => {
     
     if (galleryImageFiles.length > 0) {
       yachtData.galleryImages = [];
-      for (const file of galleryImageFiles) {
-        try {
-          console.log('📸 Attempting to upload gallery image:', file.path);
-          
-          // Check if file exists
-          const fs = await import('fs/promises');
+              for (const file of galleryImageFiles) {
           try {
-            await fs.access(file.path);
-            console.log('✅ Gallery image file exists:', file.path);
-          } catch (accessError) {
-            console.error('❌ Gallery image file does not exist:', file.path);
-            console.error('❌ Access error:', accessError.message);
-            return next(new ApiError(`Gallery image file not found: ${file.path}`, 500));
+            // Check file size (max 10MB)
+            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+            if (file.size > maxSize) {
+              return next(new ApiError(`Gallery image file size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of 10MB`, 400));
+            }
+            
+            console.log(`📸 Uploading gallery image: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+            
+            // Check if file exists
+            const fs = await import('fs/promises');
+            try {
+              await fs.access(file.path);
+              console.log('✅ Gallery image file exists:', file.path);
+            } catch (accessError) {
+              console.error('❌ Gallery image file does not exist:', file.path);
+              console.error('❌ Access error:', accessError.message);
+              return next(new ApiError(`Gallery image file not found: ${file.path}`, 500));
+            }
+            
+            const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
+            yachtData.galleryImages.push(url);
+            console.log('✅ Gallery image uploaded successfully:', url);
+          } catch (uploadError) {
+            console.error('❌ Gallery image upload failed:', uploadError);
+            return next(new ApiError(`Failed to upload gallery image: ${uploadError.message}`, 400));
           }
-          
-          const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
-          yachtData.galleryImages.push(url);
-          console.log('☁️ Gallery image uploaded successfully:', url);
-        } catch (uploadError) {
-          console.error('❌ Gallery image upload failed:', uploadError);
-          return next(new ApiError(`Failed to upload gallery image: ${uploadError.message}`, 400));
         }
-      }
     }
 
     // Now validate yachtData
@@ -80,11 +120,17 @@ export const addYacht = async (req, res, next) => {
 // Get all yachts
 export const getAllYachts = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, status } = req.query;
     const { skip, limit: parsedLimit } = paginate(page, limit);
 
-    const yachts = await Yacht.find().sort({ createdAt: -1 }).skip(skip).limit(parsedLimit);
-    const total = await Yacht.countDocuments();
+    // Build query filter
+    const filter = {};
+    if (status && ['draft', 'published'].includes(status)) {
+      filter.status = status;
+    }
+
+    const yachts = await Yacht.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parsedLimit);
+    const total = await Yacht.countDocuments(filter);
 
     const yachtsWithUrls = mapImageFilenamesToUrls(yachts, req);
     return SuccessHandler(
@@ -213,10 +259,53 @@ export const editYacht = async (req, res, next) => {
   }
 };
 
+// Update yacht status (publish/unpublish)
+export const updateYachtStatus = async (req, res, next) => {
+  try {
+    const { id } = req.query;
+    const { status } = req.body;
+
+    // Validate yacht ID
+    const { error: idError } = getYachtByIdSchema.validate({ id });
+    if (idError) {
+      return next(new ApiError(idError.details[0].message, 400));
+    }
+
+    // Validate status
+    if (!status || !['draft', 'published'].includes(status)) {
+      return next(new ApiError('Status must be either "draft" or "published"', 400));
+    }
+
+    // Check if yacht exists
+    const existingYacht = await Yacht.findById(id);
+    if (!existingYacht) {
+      return next(new ApiError('Yacht not found', 404));
+    }
+
+    // Update the yacht status
+    const updatedYacht = await Yacht.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    const yachtWithImageUrls = mapImageFilenamesToUrls(updatedYacht, req);
+    return SuccessHandler(
+      yachtWithImageUrls, 
+      200, 
+      `Yacht ${status === 'published' ? 'published' : 'unpublished'} successfully`, 
+      res
+    );
+  } catch (err) {
+    next(new ApiError(err.message, 400));
+  }
+};
+
 export default {
   addYacht,
   getAllYachts,
   getYachtById,
   deleteYacht,
   editYacht,
+  updateYachtStatus,
 }; 

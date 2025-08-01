@@ -31,8 +31,10 @@ const storage = multer.diskStorage({
     // Add unique identifier to prevent filename collisions
     const uniqueId = Math.random().toString(36).substring(2, 15);
     const finalName = Date.now() + '-' + cleanFieldName + '-' + uniqueId + ext;
+    const fullPath = path.join(tempRoot, file.fieldname === 'primaryImage' ? 'primaryImage' : 'galleryImages', finalName);
     console.log('📝 Generated filename:', finalName);
-    console.log('📁 Full file path will be:', path.join(tempRoot, file.fieldname === 'primaryImage' ? 'primaryImage' : 'galleryImages', finalName));
+    console.log('📁 Full file path will be:', fullPath);
+    console.log('📁 Temp root directory:', tempRoot);
     cb(null, finalName);
   },
 });

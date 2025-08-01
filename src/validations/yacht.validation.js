@@ -101,12 +101,24 @@ const addyachtSchema = Joi.object({
     'any.required': 'Yacht type is required',
     'any.only': 'Yacht type must be either crewed or bareboat',
   }),
+  status: Joi.string()
+    .valid('draft', 'published')
+    .default('draft')
+    .messages({
+      'any.only': 'Status must be either draft or published',
+    }),
   waterCapacity: Joi.string().allow('').optional(),
   code: Joi.string().allow('').optional(),
 });
 
-// No validation needed for getAllYachts
-const getAllYachtsSchema = Joi.object({});
+// Validation for getAllYachts with optional status filter
+const getAllYachtsSchema = Joi.object({
+  page: Joi.number().integer().min(1).optional(),
+  limit: Joi.number().integer().min(1).max(100).optional(),
+  status: Joi.string().valid('draft', 'published').optional().messages({
+    'any.only': 'Status must be either draft or published'
+  })
+});
 
 // For getYachtById, require 'id' as a string (in query or params)
 const getYachtByIdSchema = Joi.object({
@@ -175,6 +187,23 @@ const editYachtSchema = Joi.object({
     .messages({
       'any.only': 'Yacht type must be either crewed or bareboat',
     }),
+  status: Joi.string()
+    .valid('draft', 'published')
+    .optional()
+    .messages({
+      'any.only': 'Status must be either draft or published',
+    }),
 });
 
-export { addyachtSchema, getAllYachtsSchema, getYachtByIdSchema, deleteYachtSchema, editYachtSchema };
+// Status update validation schema
+const updateStatusSchema = Joi.object({
+  status: Joi.string()
+    .valid('draft', 'published')
+    .required()
+    .messages({
+      'any.required': 'Status is required',
+      'any.only': 'Status must be either draft or published'
+    })
+});
+
+export { addyachtSchema, getAllYachtsSchema, getYachtByIdSchema, deleteYachtSchema, editYachtSchema, updateStatusSchema };
