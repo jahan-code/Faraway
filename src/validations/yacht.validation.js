@@ -109,6 +109,7 @@ const addyachtSchema = Joi.object({
     }),
   waterCapacity: Joi.string().allow('').optional(),
   code: Joi.string().allow('').optional(),
+  slug: Joi.string().allow('').optional(),
 });
 
 // Validation for getAllYachts with optional status filter
@@ -181,6 +182,7 @@ const editYachtSchema = Joi.object({
   fuelCapacity: Joi.string().optional(),
   waterCapacity: Joi.string().optional(),
   code: Joi.string().allow('').optional(),
+  slug: Joi.string().allow('').optional(),
   type: Joi.string()
     .valid('crewed', 'bareboat')
     .optional()
