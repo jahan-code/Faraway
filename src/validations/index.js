@@ -6,6 +6,14 @@ import {
     adminResendOtpSchema,
 } from './auth.validation.js';
 import { addyachtSchema, deleteYachtSchema, editYachtSchema, getAllYachtsSchema, getYachtByIdSchema, updateStatusSchema } from './yacht.validation.js';
+import {
+    addBlogSchema,
+    getAllBlogsSchema,
+    getBlogByIdSchema,
+    editBlogSchema,
+    deleteBlogSchema,
+    updateBlogStatusSchema
+  } from './blog.validation.js'; 
 const validationSchemas = {
     // Authentication
     '/auth/admin/login': { POST: adminLoginSchema },
@@ -21,6 +29,12 @@ const validationSchemas = {
     '/yacht/edit-yacht': { PUT: editYachtSchema},
     '/yacht/update-status': { PATCH: updateStatusSchema},
     
+    '/blog/add-blog': { POST: addBlogSchema },
+    '/blog/all-blogs': { GET: getAllBlogsSchema },
+    '/blog/blogByID': { GET: getBlogByIdSchema },
+    '/blog/edit-blog': { PUT: editBlogSchema },
+    '/blog/delete-blog': { DELETE: deleteBlogSchema },
+    '/blog/update-status': { PATCH: updateBlogStatusSchema },
 };
 
 export { validationSchemas };

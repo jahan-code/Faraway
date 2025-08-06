@@ -35,7 +35,7 @@ const yachtSchema = new mongoose.Schema({
   slug: {
     type: String,
     unique: true,
-    sparse: true, // Allows multiple null/undefined values
+    // Allows multiple null/undefined values
   },
   type: {
     type: String,
