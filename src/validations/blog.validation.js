@@ -42,12 +42,12 @@ const addBlogSchema = Joi.object({
     .required()
     .trim()
     .min(10)
-    .max(300)
+    .max(600)
     .messages({
       'string.base': 'Short description must be a string',
       'any.required': 'Short description is required',
       'string.min': 'Short description must be at least 10 characters long',
-      'string.max': 'Short description must not exceed 300 characters',
+      'string.max': 'Short description must not exceed 500 characters',
     }),
   detailDescription: Joi.string()
     .required()
@@ -94,12 +94,12 @@ const editBlogSchema = Joi.object({
   shortDescription: Joi.string()
     .trim()
     .min(10)
-    .max(300)
+    .max(600)
     .optional()
     .messages({
       'string.base': 'Short description must be a string',
       'string.min': 'Short description must be at least 10 characters long',
-      'string.max': 'Short description must not exceed 300 characters',
+      'string.max': 'Short description must not exceed 600 characters',
     }),
   detailDescription: Joi.string()
     .trim()
