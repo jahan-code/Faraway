@@ -21,7 +21,8 @@ const startServer = async () => {
                     origin: [
                       'https://faraway-admin-panel.vercel.app',
                       'http://localhost:3000',
-                      'https://fa-taupe.vercel.app'
+                      'https://fa-taupe.vercel.app',
+                      'https://faraway-admin-pannel.vercel.app'
                     ],
                     credentials: true,
                   }
