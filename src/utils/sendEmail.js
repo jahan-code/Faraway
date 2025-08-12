@@ -10,15 +10,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 // File path logging removed for security
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: process.env.SMTP_SECURE === 'true', // Use environment variable
+  service: 'gmail', // Use Gmail service
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
+    pass: process.env.SMTP_PASS, // This should be an App Password for Gmail
   },
   connectionTimeout: 60000, // 60 seconds
   greetingTimeout: 30000,   // 30 seconds
