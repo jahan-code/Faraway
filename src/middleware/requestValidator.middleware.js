@@ -12,16 +12,14 @@ const requestValidator = (req, res, next) => {
         }
         // Extract route path without query parameters
         const fullURL = originalUrl.split('?')[0];
-        console.log(`🔍 Validating request: ${method} ${fullURL}`);
+        // Request validation logging removed for security
 
         // Match the route using path-to-regexp
         const matchedRoute = Object.keys(validationSchemas).find((route) => {
             try {
                 const { regexp } = pathToRegexp(route);
                 const isMatch = regexp.test(fullURL);
-                if (isMatch) {
-                    console.log(`✅ Matched route: ${route}`);
-                }
+                // Route matching logging removed for security
                 return isMatch;
             } catch (err) {
                 console.error(
@@ -72,7 +70,6 @@ const requestValidator = (req, res, next) => {
         }
 
         if (req.is('multipart/form-data')) {
-            console.log(`📁 Skipping validation for multipart/form-data`);
             return next();
         }
 
@@ -89,9 +86,7 @@ const requestValidator = (req, res, next) => {
             return next(new ApiError(error.details[0].message, 400));
         }
 
-        console.log(
-            `✅ Request body passed validation for ${method} ${matchedRoute}`
-        );
+        // Validation success logging removed for security
         next();
     } catch (err) {
         console.error(`🔥 Uncaught validation middleware error: ${err.message}`);

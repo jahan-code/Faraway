@@ -28,8 +28,7 @@ export const addYacht = async (req, res, next) => {
           return next(new ApiError(`Primary image file size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of 10MB`, 400));
         }
         
-        console.log(`📸 Uploading primary image: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-        console.log(`📁 File path: ${file.path}`);
+        console.log(`📸 Uploading primary image: ${file.originalname}`);
         
         // Small delay to ensure file is fully written
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -38,26 +37,22 @@ export const addYacht = async (req, res, next) => {
         const fs = await import('fs/promises');
         try {
           await fs.access(file.path);
-          console.log('✅ Primary image file exists and is accessible');
-          
           // Get file stats to verify it's not empty
           const stats = await fs.stat(file.path);
-          console.log(`📊 File size: ${stats.size} bytes`);
           
           if (stats.size === 0) {
             return next(new ApiError('Primary image file is empty', 400));
           }
         } catch (accessError) {
-          console.error('❌ Primary image file does not exist:', file.path);
-          console.error('❌ Access error:', accessError.message);
-          return next(new ApiError(`Primary image file not found: ${file.path}`, 500));
+          console.error('❌ Primary image file access error');
+          return next(new ApiError('Primary image file not found', 500));
         }
         
         yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
-        console.log(`✅ Primary image uploaded successfully: ${yachtData.primaryImage}`);
+        console.log('✅ Primary image uploaded successfully');
       } catch (uploadError) {
-        console.error(`❌ Primary image upload failed:`, uploadError);
-        return next(new ApiError(`Failed to upload primary image: ${uploadError.message}`, 400));
+        console.error('❌ Primary image upload failed');
+        return next(new ApiError('Failed to upload primary image', 400));
       }
     }
 
@@ -67,8 +62,7 @@ export const addYacht = async (req, res, next) => {
       ...(req.files?.['galleryImages[]'] || []),
     ];
     
-    console.log('🖼️ Gallery images found:', galleryImageFiles.length);
-    console.log('📁 Gallery image files:', galleryImageFiles.map(f => ({ path: f.path, fieldname: f.fieldname, originalname: f.originalname })));
+    console.log(`🖼️ Gallery images found: ${galleryImageFiles.length}`);
     
     if (galleryImageFiles.length > 0) {
       yachtData.galleryImages = [];
@@ -80,25 +74,23 @@ export const addYacht = async (req, res, next) => {
               return next(new ApiError(`Gallery image file size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of 10MB`, 400));
             }
             
-            console.log(`📸 Uploading gallery image: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+            console.log(`📸 Uploading gallery image: ${file.originalname}`);
             
             // Check if file exists
             const fs = await import('fs/promises');
             try {
               await fs.access(file.path);
-              console.log('✅ Gallery image file exists:', file.path);
             } catch (accessError) {
-              console.error('❌ Gallery image file does not exist:', file.path);
-              console.error('❌ Access error:', accessError.message);
-              return next(new ApiError(`Gallery image file not found: ${file.path}`, 500));
+              console.error('❌ Gallery image file access error');
+              return next(new ApiError('Gallery image file not found', 500));
             }
             
             const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
             yachtData.galleryImages.push(url);
-            console.log('✅ Gallery image uploaded successfully:', url);
+            console.log('✅ Gallery image uploaded successfully');
           } catch (uploadError) {
-            console.error('❌ Gallery image upload failed:', uploadError);
-            return next(new ApiError(`Failed to upload gallery image: ${uploadError.message}`, 400));
+            console.error('❌ Gallery image upload failed');
+            return next(new ApiError('Failed to upload gallery image', 400));
           }
         }
     }

@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-console.log(__filename,__dirname)
+// File path logging removed for security
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '465'),
@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
     rejectUnauthorized: false,
   },
 });
-console.log(process.env.SMTP_HOST,process.env.SMTP_PORT,process.env.SMTP_USER,process.env.SMTP_PASS)
+// SMTP credentials logging removed for security
 export const sendEmail = async ({
   to,
   subject,
@@ -46,7 +46,7 @@ export const sendEmail = async ({
       `${templateName}.html`
     );
     try {
-      console.log(templatePath)
+      // Template path logging removed for security
       await fs.access(templatePath); // Check if template file exists
     } catch {
       throw new Error(`Template file ${templateName}.html not found`);
@@ -65,10 +65,10 @@ export const sendEmail = async ({
 
     // Send email
     const info = await transporter.sendMail(mailOptions);
-    console.log(`Email sent to ${to}: ${info.messageId}`);
+    console.log(`Email sent successfully to ${to}`);
     return info;
   } catch (error) {
-    console.error(`Error sending email to ${to}:`, error);
+    console.error(`Error sending email to ${to}`);
     throw new Error(`Failed to send email: ${error.message}`);
   }
 };

@@ -30,7 +30,7 @@ export const addBlog = async (req, res, next) => {
         }
         
         logger.info(`📸 Uploading blog image: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-        console.log(`📁 File path: ${file.path}`);
+        // File path logging removed for security
         
         // Small delay to ensure file is fully written
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -43,7 +43,7 @@ export const addBlog = async (req, res, next) => {
           
           // Get file stats to verify it's not empty
           const stats = await fs.stat(file.path);
-          console.log(`📊 File size: ${stats.size} bytes`);
+          // File size logging removed for security
           
           if (stats.size === 0) {
             return next(new ApiError('Blog image file is empty', 400));

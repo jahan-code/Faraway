@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 export async function uploadToCloudinary(filePath, folder, retries = 3) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      console.log(`📤 Uploading to Cloudinary (attempt ${attempt}/${retries}): ${filePath}`);
+      console.log(`📤 Uploading to Cloudinary (attempt ${attempt}/${retries})`);
       
       const url = await new Promise((resolve, reject) => {
         // Set timeout for the upload
@@ -25,7 +25,7 @@ export async function uploadToCloudinary(filePath, folder, retries = 3) {
               console.error(`❌ Cloudinary upload error (attempt ${attempt}):`, error);
               reject(error);
             } else {
-              console.log(`✅ Cloudinary upload successful (attempt ${attempt}):`, result.secure_url);
+              console.log(`✅ Cloudinary upload successful (attempt ${attempt})`);
               resolve(result.secure_url);
             }
           }
@@ -35,9 +35,9 @@ export async function uploadToCloudinary(filePath, folder, retries = 3) {
       // Clean up temp file after successful upload
       try {
         await fs.unlink(filePath);
-        console.log(`🗑️ Temp file cleaned up: ${filePath}`);
+        console.log('🗑️ Temp file cleaned up');
       } catch (unlinkError) {
-        console.warn(`⚠️ Failed to delete temp file ${filePath}:`, unlinkError.message);
+        console.warn('⚠️ Failed to delete temp file');
       }
       
       return url;
@@ -48,7 +48,7 @@ export async function uploadToCloudinary(filePath, folder, retries = 3) {
       try {
         await fs.unlink(filePath);
       } catch (unlinkError) {
-        console.warn(`⚠️ Failed to delete temp file ${filePath}:`, unlinkError.message);
+        console.warn('⚠️ Failed to delete temp file');
       }
       
       // If this is the last attempt, throw the error
