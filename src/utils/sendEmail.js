@@ -12,7 +12,7 @@ const __dirname = dirname(__filename);
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: false, // Use secure for port 465
+  secure: process.env.SMTP_SECURE === 'true', // Use environment variable
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -20,8 +20,25 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
+  connectionTimeout: 60000, // 60 seconds
+  greetingTimeout: 30000,   // 30 seconds
+  socketTimeout: 60000,     // 60 seconds
 });
 // SMTP credentials logging removed for security
+
+// Verify SMTP connection on startup
+const verifySMTPConnection = async () => {
+  try {
+    await transporter.verify();
+    console.log('✅ SMTP connection verified successfully');
+  } catch (error) {
+    console.error('❌ SMTP connection verification failed:', error.message);
+  }
+};
+
+// Verify connection when module loads
+verifySMTPConnection();
+
 export const sendEmail = async ({
   to,
   subject,
@@ -68,8 +85,20 @@ export const sendEmail = async ({
     console.log(`Email sent successfully to ${to}`);
     return info;
   } catch (error) {
-    console.error(`Error sending email to ${to}`);
-    throw new Error(`Failed to send email: ${error.message}`);
+    console.error(`Error sending email to ${to}: ${error.message}`);
+    
+    // Provide more specific error messages for common SMTP issues
+    if (error.message.includes('Greeting never received')) {
+      throw new Error('SMTP connection failed - check server settings and credentials');
+    } else if (error.message.includes('Invalid login')) {
+      throw new Error('SMTP authentication failed - check username and password');
+    } else if (error.message.includes('ECONNREFUSED')) {
+      throw new Error('SMTP server connection refused - check host and port');
+    } else if (error.message.includes('timeout')) {
+      throw new Error('SMTP connection timeout - check network and server settings');
+    } else {
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
   }
 };
 
