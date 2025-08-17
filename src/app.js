@@ -8,6 +8,7 @@ import path from 'path';
 import ApiErrorMiddleware from './middleware/ApiError.middleware.js';
 import router from './router/index.js';
 import cookieParser from 'cookie-parser';
+import { requestTimer } from './utils/cache.js';
 
 const app = express();
 
@@ -32,6 +33,9 @@ const startServer = async () => {
         
         // Static files
         app.use('/uploads', express.static(path.join(process.cwd(), 'src', 'uploads')));
+        
+        // Request timing
+        app.use(requestTimer);
         
         // Health check
         app.get('/health', (req, res) => {
