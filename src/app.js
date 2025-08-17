@@ -12,10 +12,16 @@ import requestValidator from './middleware/requestValidator.middleware.js';
 import router from './router/index.js';
 import cookieParser from 'cookie-parser';
 import { requestTimer } from './utils/cache.js';
+import { securityMiddleware, simpleSecurityHeaders, requestSizeLimit } from './middleware/security.middleware.js';
 
 
 const startServer = async () => {
     try {
+        // ===== SECURITY MIDDLEWARE =====
+        app.use(securityMiddleware);
+        app.use(simpleSecurityHeaders);
+        app.use(requestSizeLimit);
+        
         app.use(
             cors(
                 {
