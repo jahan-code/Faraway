@@ -225,4 +225,35 @@ export const clearBlogCache = async () => {
   }
 };
 
+// General request timing middleware
+export const requestTimer = (req, res, next) => {
+  const start = Date.now();
+  
+  // Override res.json to capture timing
+  const originalJson = res.json;
+  res.json = function(data) {
+    const duration = Date.now() - start;
+    const method = req.method;
+    const url = req.originalUrl || req.url;
+    
+    // Color-coded timing based on performance
+    let timingColor = '';
+    if (duration < 100) {
+      timingColor = '⚡'; // Excellent
+    } else if (duration < 500) {
+      timingColor = '✅'; // Good
+    } else if (duration < 1000) {
+      timingColor = '⚠️'; // Slow
+    } else {
+      timingColor = '🐌'; // Very slow
+    }
+    
+    console.log(`${timingColor} ${method} ${url} | Total: ${duration}ms`);
+    
+    return originalJson.call(this, data);
+  };
+  
+  next();
+};
+
 export default redis;
