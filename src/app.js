@@ -12,7 +12,7 @@ const app = express();
 import router from './router/index.js';
 import cookieParser from 'cookie-parser';
 import { requestTimer } from './utils/cache.js';
-import { securityMiddleware, simpleSecurityHeaders, requestSizeLimit } from './middleware/security.middleware.js';
+// Removed all security middleware temporarily
 
 
 const startServer = async () => {
@@ -22,8 +22,7 @@ const startServer = async () => {
         app.use(express.urlencoded({ extended: true, limit: '10mb' }));
         app.use(cookieParser());
         
-        // ===== CORS (SECOND - BEFORE SECURITY) =====
-        // Handle CORS before security middleware to prevent conflicts
+        // ===== CORS (SECOND) =====
         app.use(
             cors(
                 {
@@ -44,15 +43,9 @@ const startServer = async () => {
         );
         
         // ===== OPTIONS REQUEST HANDLER =====
-        // Handle OPTIONS requests before security middleware
         app.options('*', (req, res) => {
             res.status(204).end();
         });
-        
-        // ===== SECURITY MIDDLEWARE (THIRD) =====
-        app.use(securityMiddleware);
-        app.use(simpleSecurityHeaders);
-        app.use(requestSizeLimit);
         
         // ===== STATIC FILES =====
         app.use(
@@ -60,14 +53,10 @@ const startServer = async () => {
             express.static(path.join(process.cwd(), 'src', 'uploads'))
         );
         
-        // ===== REQUEST TIMING (FOURTH) =====
+        // ===== REQUEST TIMING =====
         app.use(requestTimer);
         
-        // ===== VALIDATION MIDDLEWARE (FIFTH) =====
-        // Temporarily disabled due to path-to-regexp errors
-        // app.use(requestValidator);
-        
-        // ✅ Middleware setup complete
+        // ✅ Middleware setup complete (no security for now)
 
         app.get('/health', (req, res) => {
             res.json({
