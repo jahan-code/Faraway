@@ -1,11 +1,9 @@
 import express from 'express';
 import auth from '../controllers/authController.js';
-// Removed security middleware temporarily
 
 const router = express.Router();
 
-
-// Admin-only routes (no security for now)
+// Admin routes
 router.post('/admin/login', auth.adminLogin);
 router.post('/admin/forgot-password', auth.adminForgotPassword);
 router.post('/admin/verify-otp', auth.adminVerifyOtp);

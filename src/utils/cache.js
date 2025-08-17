@@ -59,43 +59,27 @@ async function testRedisPerformance() {
 
 // Cache middleware for yacht listings
 export const cacheYachtList = async (req, res, next) => {
-  const requestStart = Date.now();
   const { page = 1, limit = 10, status } = req.query;
   const cacheKey = `yachts:${page}:${limit}:${status || 'all'}`;
   
   try {
-    // Fast Redis check with very short timeout
-    const cacheStart = Date.now();
-    const cachedData = await Promise.race([
-      redis.get(cacheKey),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Redis timeout')), 200) // Only 200ms timeout!
-      )
-    ]);
-    const cacheTime = Date.now() - cacheStart;
+    const cachedData = await redis.get(cacheKey);
     
     if (cachedData) {
-      const totalTime = Date.now() - requestStart;
-      console.log(`⚡ Cache HIT for yacht list | Cache: ${cacheTime}ms | Total: ${totalTime}ms | Key: ${cacheKey}`);
+      console.log(`⚡ Cache HIT for yacht list | Key: ${cacheKey}`);
       return res.json(JSON.parse(cachedData));
     }
     
-    // Cache miss - will query database
-    console.log(`🔄 Cache MISS for yacht list | Cache check: ${cacheTime}ms | Key: ${cacheKey}`);
+    console.log(`🔄 Cache MISS for yacht list | Key: ${cacheKey}`);
     
     // Store original send method
     const originalSend = res.json;
     
-    // Override send method to cache response and log timing
+    // Override send method to cache response
     res.json = function(data) {
-      const dbQueryTime = Date.now() - requestStart;
-      
-      // Cache for 5 minutes (don't block response)
+      // Cache for 5 minutes
       redis.setex(cacheKey, 300, JSON.stringify(data))
-        .then(() => {
-          const cacheWriteTime = Date.now() - requestStart;
-          console.log(`💾 Cached yacht list data | DB Query: ${dbQueryTime}ms | Cache Write: ${cacheWriteTime}ms | Total: ${cacheWriteTime}ms`);
-        })
+        .then(() => console.log(`💾 Cached yacht list data | Key: ${cacheKey}`))
         .catch(err => console.error('Cache write error:', err.message));
       
       return originalSend.call(this, data);
@@ -103,46 +87,34 @@ export const cacheYachtList = async (req, res, next) => {
     
     next();
   } catch (error) {
-    const totalTime = Date.now() - requestStart;
-    console.log(`⚠️ Redis cache failed, using database directly | Time: ${totalTime}ms | Error: ${error.message}`);
+    console.log(`⚠️ Redis cache failed for yacht list | Error: ${error.message}`);
     next(); // Continue without cache if Redis fails
   }
 };
 
 // Cache middleware for individual yacht
 export const cacheYachtById = async (req, res, next) => {
-  const requestStart = Date.now();
   const { id } = req.query;
   const cacheKey = `yacht:${id}`;
   
   try {
-    // Try to get from cache first
-    const cacheStart = Date.now();
     const cachedData = await redis.get(cacheKey);
-    const cacheTime = Date.now() - cacheStart;
     
     if (cachedData) {
-      const totalTime = Date.now() - requestStart;
-      console.log(`⚡ Cache HIT for yacht by ID | Cache: ${cacheTime}ms | Total: ${totalTime}ms | ID: ${id}`);
+      console.log(`⚡ Cache HIT for yacht by ID | ID: ${id}`);
       return res.json(JSON.parse(cachedData));
     }
     
-    // Cache miss - will query database
-    console.log(`🔄 Cache MISS for yacht by ID | Cache check: ${cacheTime}ms | ID: ${id}`);
+    console.log(`🔄 Cache MISS for yacht by ID | ID: ${id}`);
     
     // Store original send method
     const originalSend = res.json;
     
-    // Override send method to cache response and log timing
+    // Override send method to cache response
     res.json = function(data) {
-      const dbQueryTime = Date.now() - requestStart;
-      
       // Cache for 10 minutes (longer for individual yachts)
       redis.setex(cacheKey, 600, JSON.stringify(data))
-        .then(() => {
-          const cacheWriteTime = Date.now() - requestStart;
-          console.log(`💾 Cached yacht by ID data | DB Query: ${dbQueryTime}ms | Cache Write: ${cacheWriteTime}ms | Total: ${cacheWriteTime}ms | ID: ${id}`);
-        })
+        .then(() => console.log(`💾 Cached yacht by ID data | ID: ${id}`))
         .catch(err => console.error('Cache write error:', err.message));
       
       return originalSend.call(this, data);
@@ -150,46 +122,34 @@ export const cacheYachtById = async (req, res, next) => {
     
     next();
   } catch (error) {
-    const totalTime = Date.now() - requestStart;
-    console.log(`⚠️ Redis cache failed for yacht by ID | Time: ${totalTime}ms | Error: ${error.message} | ID: ${id}`);
+    console.log(`⚠️ Redis cache failed for yacht by ID | Error: ${error.message} | ID: ${id}`);
     next(); // Continue without cache if Redis fails
   }
 };
 
 // Cache middleware for blog listings
 export const cacheBlogList = async (req, res, next) => {
-  const requestStart = Date.now();
   const { page = 1, limit = 10, status } = req.query;
   const cacheKey = `blogs:${page}:${limit}:${status || 'all'}`;
   
   try {
-    // Try to get from cache first
-    const cacheStart = Date.now();
     const cachedData = await redis.get(cacheKey);
-    const cacheTime = Date.now() - cacheStart;
     
     if (cachedData) {
-      const totalTime = Date.now() - requestStart;
-      console.log(`⚡ Cache HIT for blog list | Cache: ${cacheTime}ms | Total: ${totalTime}ms | Key: ${cacheKey}`);
+      console.log(`⚡ Cache HIT for blog list | Key: ${cacheKey}`);
       return res.json(JSON.parse(cachedData));
     }
     
-    // Cache miss - will query database
-    console.log(`🔄 Cache MISS for blog list | Cache check: ${cacheTime}ms | Key: ${cacheKey}`);
+    console.log(`🔄 Cache MISS for blog list | Key: ${cacheKey}`);
     
     // Store original send method
     const originalSend = res.json;
     
-    // Override send method to cache response and log timing
+    // Override send method to cache response
     res.json = function(data) {
-      const dbQueryTime = Date.now() - requestStart;
-      
       // Cache for 5 minutes
       redis.setex(cacheKey, 300, JSON.stringify(data))
-        .then(() => {
-          const cacheWriteTime = Date.now() - requestStart;
-          console.log(`💾 Cached blog list data | DB Query: ${dbQueryTime}ms | Cache Write: ${cacheWriteTime}ms | Total: ${cacheWriteTime}ms`);
-        })
+        .then(() => console.log(`💾 Cached blog list data | Key: ${cacheKey}`))
         .catch(err => console.error('Cache write error:', err.message));
       
       return originalSend.call(this, data);
@@ -197,46 +157,34 @@ export const cacheBlogList = async (req, res, next) => {
     
     next();
   } catch (error) {
-    const totalTime = Date.now() - requestStart;
-    console.log(`⚠️ Redis cache failed for blog list | Time: ${totalTime}ms | Error: ${error.message}`);
+    console.log(`⚠️ Redis cache failed for blog list | Error: ${error.message}`);
     next(); // Continue without cache if Redis fails
   }
 };
 
 // Cache middleware for individual blog
 export const cacheBlogById = async (req, res, next) => {
-  const requestStart = Date.now();
   const { id } = req.query;
   const cacheKey = `blog:${id}`;
   
   try {
-    // Try to get from cache first
-    const cacheStart = Date.now();
     const cachedData = await redis.get(cacheKey);
-    const cacheTime = Date.now() - cacheStart;
     
     if (cachedData) {
-      const totalTime = Date.now() - requestStart;
-      console.log(`⚡ Cache HIT for blog by ID | Cache: ${cacheTime}ms | Total: ${totalTime}ms | ID: ${id}`);
+      console.log(`⚡ Cache HIT for blog by ID | ID: ${id}`);
       return res.json(JSON.parse(cachedData));
     }
     
-    // Cache miss - will query database
-    console.log(`🔄 Cache MISS for blog by ID | Cache check: ${cacheTime}ms | ID: ${id}`);
+    console.log(`🔄 Cache MISS for blog by ID | ID: ${id}`);
     
     // Store original send method
     const originalSend = res.json;
     
-    // Override send method to cache response and log timing
+    // Override send method to cache response
     res.json = function(data) {
-      const dbQueryTime = Date.now() - requestStart;
-      
       // Cache for 10 minutes (longer for individual blogs)
       redis.setex(cacheKey, 600, JSON.stringify(data))
-        .then(() => {
-          const cacheWriteTime = Date.now() - requestStart;
-          console.log(`💾 Cached blog by ID data | DB Query: ${dbQueryTime}ms | Cache Write: ${cacheWriteTime}ms | Total: ${cacheWriteTime}ms | ID: ${id}`);
-        })
+        .then(() => console.log(`💾 Cached blog by ID data | ID: ${id}`))
         .catch(err => console.error('Cache write error:', err.message));
       
       return originalSend.call(this, data);
@@ -244,8 +192,7 @@ export const cacheBlogById = async (req, res, next) => {
     
     next();
   } catch (error) {
-    const totalTime = Date.now() - requestStart;
-    console.log(`⚠️ Redis cache failed for blog by ID | Time: ${totalTime}ms | Error: ${error.message} | ID: ${id}`);
+    console.log(`⚠️ Redis cache failed for blog by ID | Error: ${error.message} | ID: ${id}`);
     next(); // Continue without cache if Redis fails
   }
 };
@@ -276,55 +223,6 @@ export const clearBlogCache = async () => {
   } catch (error) {
     console.error('Error clearing cache:', error);
   }
-};
-
-// General request timing middleware
-export const requestTimer = (req, res, next) => {
-  const start = Date.now();
-  
-  // Override res.json to capture timing
-  const originalJson = res.json;
-  res.json = function(data) {
-    const duration = Date.now() - start;
-    const method = req.method;
-    const url = req.originalUrl || req.url;
-    
-    // Color-coded timing based on performance
-    let timingColor = '';
-    if (duration < 100) {
-      timingColor = '⚡'; // Excellent
-    } else if (duration < 500) {
-      timingColor = '✅'; // Good
-    } else if (duration < 1000) {
-      timingColor = '⚠️'; // Slow
-    } else {
-      timingColor = '🐌'; // Very slow
-    }
-    
-    console.log(`${timingColor} ${method} ${url} | Total: ${duration}ms`);
-    
-    return originalJson.call(this, data);
-  };
-  
-  next();
-};
-
-// Performance monitoring function
-export const logPerformance = (operation, startTime, additionalInfo = '') => {
-  const duration = Date.now() - startTime;
-  let performanceIndicator = '';
-  
-  if (duration < 50) {
-    performanceIndicator = '⚡';
-  } else if (duration < 200) {
-    performanceIndicator = '✅';
-  } else if (duration < 500) {
-    performanceIndicator = '⚠️';
-  } else {
-    performanceIndicator = '🐌';
-  }
-  
-  console.log(`${performanceIndicator} ${operation} | Time: ${duration}ms ${additionalInfo}`);
 };
 
 export default redis;
