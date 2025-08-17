@@ -22,12 +22,8 @@ const startServer = async () => {
         app.use(express.urlencoded({ extended: true, limit: '10mb' }));
         app.use(cookieParser());
         
-        // ===== SECURITY MIDDLEWARE (SECOND) =====
-        app.use(securityMiddleware);
-        app.use(simpleSecurityHeaders);
-        app.use(requestSizeLimit);
-        
-        // ===== CORS (THIRD) =====
+        // ===== CORS (SECOND - BEFORE SECURITY) =====
+        // Handle CORS before security middleware to prevent conflicts
         app.use(
             cors(
                 {
@@ -39,9 +35,24 @@ const startServer = async () => {
                       'https://faraway-psi.vercel.app'
                     ],
                     credentials: true,
+                    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+                    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+                    preflightContinue: false,
+                    optionsSuccessStatus: 204
                   }
             )
         );
+        
+        // ===== OPTIONS REQUEST HANDLER =====
+        // Handle OPTIONS requests before security middleware
+        app.options('*', (req, res) => {
+            res.status(204).end();
+        });
+        
+        // ===== SECURITY MIDDLEWARE (THIRD) =====
+        app.use(securityMiddleware);
+        app.use(simpleSecurityHeaders);
+        app.use(requestSizeLimit);
         
         // ===== STATIC FILES =====
         app.use(

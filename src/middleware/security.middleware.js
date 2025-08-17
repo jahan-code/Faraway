@@ -1,7 +1,7 @@
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import slowDown from 'express-slow-down';
-import hpp from 'hpp';
+// import hpp from 'hpp'; // Temporarily disabled due to query property conflicts
 import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss-clean';
 
@@ -52,11 +52,40 @@ export const loginRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
-// ===== 5. HPP - Parameter Pollution Protection =====
-export const hppConfig = hpp({
-  // Removed whitelist to prevent query modification conflicts
-  // This prevents the "Cannot set property query" error
-});
+// ===== 5. CUSTOM PARAMETER POLLUTION PROTECTION =====
+// Safer alternative to HPP that doesn't modify query objects
+export const customHppProtection = (req, res, next) => {
+  try {
+    // Skip OPTIONS requests (CORS preflight)
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
+    
+    // Check for duplicate parameters in query string (basic HPP protection)
+    const url = req.url;
+    if (url.includes('?') && url.includes('&')) {
+      const queryPart = url.split('?')[1];
+      const params = queryPart.split('&');
+      const paramNames = params.map(p => p.split('=')[0]);
+      
+      // Check for duplicate parameter names
+      const duplicates = paramNames.filter((name, index) => paramNames.indexOf(name) !== index);
+      
+      if (duplicates.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Duplicate parameters detected. Please check your request.',
+          error: 'PARAMETER_POLLUTION_DETECTED'
+        });
+      }
+    }
+    
+    next();
+  } catch (error) {
+    // If there's any error, just continue (don't block the request)
+    next();
+  }
+};
 
 // ===== 6. MONGO SANITIZE - MongoDB Injection Protection =====
 export const mongoSanitizeConfig = mongoSanitize({
@@ -69,7 +98,7 @@ export const xssConfig = xss();
 // ===== COMBINED SECURITY MIDDLEWARE =====
 export const securityMiddleware = [
   helmetConfig,
-  hppConfig,
+  customHppProtection, // Custom safer alternative to HPP
   mongoSanitizeConfig,
   xssConfig,
   smartRateLimit,

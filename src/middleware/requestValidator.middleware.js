@@ -8,11 +8,12 @@ const requestValidator = (req, res, next) => {
     try {
         const { method, originalUrl, body } = req;
         
-        // Skip validation for static files and health checks
+        // Skip validation for static files, health checks, and OPTIONS requests
         if (originalUrl.startsWith('/uploads') || 
             originalUrl === '/favicon.ico' || 
             originalUrl === '/health' || 
-            originalUrl === '/redis-health') {
+            originalUrl === '/redis-health' ||
+            method === 'OPTIONS') {
             return next();
         }
         
