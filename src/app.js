@@ -11,6 +11,7 @@ const app = express();
 import requestValidator from './middleware/requestValidator.middleware.js';
 import router from './router/index.js';
 import cookieParser from 'cookie-parser';
+import { requestTimer } from './utils/cache.js';
 
 
 const startServer = async () => {
@@ -39,6 +40,9 @@ const startServer = async () => {
         // ✅ Middleware setup
 
         app.use(requestValidator);
+        
+        // Add request timing middleware
+        app.use(requestTimer);
 
         app.get('/health', (req, res) => {
             res.json({
