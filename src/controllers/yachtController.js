@@ -5,6 +5,7 @@ import ApiError from '../utils/ApiError.js';
 import { getYachtByIdSchema, addyachtSchema, editYachtSchema } from '../validations/yacht.validation.js';
 import paginate from '../utils/paginate.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
+import mapImageFilenamesToUrls from '../utils/mapImageFilenamesToUrls.js';
 
 
 // Add a new yacht
@@ -102,7 +103,10 @@ export const addYacht = async (req, res, next) => {
     }
 
     const newYacht = await Yacht.create(yachtData);
-    return SuccessHandler(newYacht, 201, 'Yacht added successfully', res);
+    
+    // Map image filenames to URLs and return new yacht
+    const yachtWithUrls = mapImageFilenamesToUrls(newYacht, req);
+    return SuccessHandler(yachtWithUrls, 201, 'Yacht added successfully', res);
   } catch (err) {
     next(new ApiError(err.message, 400));
   }
@@ -123,7 +127,7 @@ export const getAllYachts = async (req, res, next) => {
     // Use Promise.all for parallel execution
     const [yachts, total] = await Promise.all([
       Yacht.find(filter)
-        .select('title boatType price capacity length primaryImage status createdAt type slug')
+        .select('title boatType price capacity length primaryImage galleryImages status createdAt type slug passengerDayTrip passengerOvernight bathrooms cabins daytripPriceEuro')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parsedLimit)
@@ -132,13 +136,15 @@ export const getAllYachts = async (req, res, next) => {
       Yacht.countDocuments(filter).exec()
     ]);
 
-    // Return yachts with original Cloudinary URLs (no prefixing needed)
+    // Map image filenames to URLs and return yachts
+    const yachtsWithUrls = mapImageFilenamesToUrls(yachts, req);
+    
     const response = {
-      yachts: yachts,
-      page: Number(page),
-      limit: parsedLimit,
-      total,
-      totalPages: Math.ceil(total / parsedLimit)
+      yachts: yachtsWithUrls,
+        page: Number(page),
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit)
     };
 
     return SuccessHandler(
@@ -173,8 +179,9 @@ export const getYachtById = async (req, res, next) => {
       return next(new ApiError('Yacht not found', 404));
     }
     
-    // Return yacht with original Cloudinary URLs (no prefixing needed)
-    return SuccessHandler(yacht, 200, 'Yacht fetched successfully', res);
+    // Map image filenames to URLs and return yacht
+    const yachtWithUrls = mapImageFilenamesToUrls(yacht, req);
+    return SuccessHandler(yachtWithUrls, 200, 'Yacht fetched successfully', res);
   } catch (err) {
     next(new ApiError(err.message, 400));
   }
@@ -260,7 +267,9 @@ export const editYacht = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
-    return SuccessHandler(updatedYacht, 200, 'Yacht updated successfully', res);
+    // Map image filenames to URLs and return updated yacht
+    const yachtWithUrls = mapImageFilenamesToUrls(updatedYacht, req);
+    return SuccessHandler(yachtWithUrls, 200, 'Yacht updated successfully', res);
   } catch (err) {
     next(new ApiError(err.message, 400));
   }
@@ -296,8 +305,10 @@ export const updateYachtStatus = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
+    // Map image filenames to URLs and return updated yacht
+    const yachtWithUrls = mapImageFilenamesToUrls(updatedYacht, req);
     return SuccessHandler(
-      updatedYacht, 
+      yachtWithUrls, 
       200, 
       `Yacht ${status === 'published' ? 'published' : 'unpublished'} successfully`, 
       res

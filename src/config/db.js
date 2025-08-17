@@ -25,7 +25,7 @@ const connectDB = async () => {
 
         // Set up connection event listeners
         connection.on('connected', () => {
-            console.log('✅ Database connected successfully');
+        console.log('✅ Database connected successfully');
         });
 
         connection.on('error', (err) => {
