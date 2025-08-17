@@ -8,7 +8,7 @@ import cors from 'cors';
 
 import ApiErrorMiddleware from './middleware/ApiError.middleware.js';
 const app = express();
-import requestValidator from './middleware/requestValidator.middleware.js';
+// Removed requestValidator import due to path-to-regexp errors
 import router from './router/index.js';
 import cookieParser from 'cookie-parser';
 import { requestTimer } from './utils/cache.js';

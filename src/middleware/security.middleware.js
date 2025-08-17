@@ -1,6 +1,6 @@
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import slowDown from 'express-slow-down';
+// import slowDown from 'express-slow-down'; // Temporarily disabled
 // import hpp from 'hpp'; // Temporarily disabled due to query property conflicts
 import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss-clean';
@@ -29,16 +29,17 @@ export const smartRateLimit = rateLimit({
 });
 
 // ===== 3. SLOW DOWN - For Brute Force Protection =====
-export const smartSlowDown = slowDown({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  delayAfter: 100, // Allow 100 requests before slowing down
-  delayMs: () => 200, // Fixed for v2: use function instead of number
-  maxDelayMs: 10000, // Maximum delay of 10 seconds
-  // Performance optimizations
-  skipSuccessfulRequests: true, // Don't slow down successful requests
-  // Disable validation warnings
-  validate: { delayMs: false }
-});
+// Temporarily disabled due to v2 compatibility issues
+// export const smartSlowDown = slowDown({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   delayAfter: 100, // Allow 100 requests before slowing down
+//   delayMs: () => 200, // Fixed for v2: use function instead of number
+//   maxDelayMs: 10000, // Maximum delay of 10 seconds
+//   // Performance optimizations
+//   skipSuccessfulRequests: true, // Don't slow down successful requests
+//   // Disable validation warnings
+//   validate: { delayMs: false }
+// });
 
 // ===== 4. STRICT RATE LIMIT - For Login Routes =====
 export const loginRateLimit = rateLimit({
@@ -104,13 +105,13 @@ export const securityMiddleware = [
   mongoSanitizeConfig,
   xssConfig,
   smartRateLimit,
-  smartSlowDown,
+  // smartSlowDown, // Temporarily disabled
 ];
 
 // ===== LOGIN-SPECIFIC SECURITY =====
 export const loginSecurity = [
   loginRateLimit,
-  smartSlowDown,
+  // smartSlowDown, // Temporarily disabled
 ];
 
 // ===== SIMPLE SECURITY HEADERS =====
