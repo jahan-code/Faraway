@@ -54,7 +54,8 @@ export const loginRateLimit = rateLimit({
 
 // ===== 5. HPP - Parameter Pollution Protection =====
 export const hppConfig = hpp({
-  whitelist: ['page', 'limit', 'status', 'id'], // Allow these parameters
+  // Removed whitelist to prevent query modification conflicts
+  // This prevents the "Cannot set property query" error
 });
 
 // ===== 6. MONGO SANITIZE - MongoDB Injection Protection =====

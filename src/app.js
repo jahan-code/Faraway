@@ -17,11 +17,17 @@ import { securityMiddleware, simpleSecurityHeaders, requestSizeLimit } from './m
 
 const startServer = async () => {
     try {
-        // ===== SECURITY MIDDLEWARE =====
+        // ===== BASIC MIDDLEWARE (FIRST) =====
+        app.use(express.json({ limit: '10mb' }));
+        app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+        app.use(cookieParser());
+        
+        // ===== SECURITY MIDDLEWARE (SECOND) =====
         app.use(securityMiddleware);
         app.use(simpleSecurityHeaders);
         app.use(requestSizeLimit);
         
+        // ===== CORS (THIRD) =====
         app.use(
             cors(
                 {
@@ -36,19 +42,20 @@ const startServer = async () => {
                   }
             )
         );
-        app.use(cookieParser());
-        app.use(express.urlencoded({ extended: true }));
-        app.use(express.json());
+        
+        // ===== STATIC FILES =====
         app.use(
             '/uploads',
             express.static(path.join(process.cwd(), 'src', 'uploads'))
         );
-        // ✅ Middleware setup
-
+        
+        // ===== REQUEST TIMING (FOURTH) =====
+        app.use(requestTimer);
+        
+        // ===== VALIDATION MIDDLEWARE (FIFTH) =====
         app.use(requestValidator);
         
-        // Add request timing middleware
-        app.use(requestTimer);
+        // ✅ Middleware setup complete
 
         app.get('/health', (req, res) => {
             res.json({

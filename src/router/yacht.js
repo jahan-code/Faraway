@@ -3,13 +3,12 @@ import yachtController from '../controllers/yachtController.js';
 import upload from '../middleware/upload.middleware.js';
 import { verifyToken } from '../middleware/Auth.middleware.js';
 import { deleteYacht, editYacht, updateYachtStatus } from '../controllers/yachtController.js';
-import { yachtRateLimiter } from '../middleware/rateLimiter.js';
 import { cacheYachtList, cacheYachtById, clearYachtCache } from '../utils/cache.js';
 
 const router = express.Router();
 
-// Rate limiting for all yacht routes
-router.use(yachtRateLimiter);
+// Rate limiting is now handled globally by security middleware
+// router.use(yachtRateLimiter); // Removed duplicate
 
 router.post('/add-yacht', verifyToken,
     upload.fields([
