@@ -121,18 +121,35 @@ export const getAllYachts = async (req, res, next) => {
       filter.status = status;
     }
 
-    const yachts = await Yacht.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parsedLimit);
-    const total = await Yacht.countDocuments(filter);
+    // Use Promise.all for parallel execution
+    const [yachts, total] = await Promise.all([
+      Yacht.find(filter)
+        .select('title boatType price capacity length primaryImage status createdAt type slug')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parsedLimit)
+        .lean()
+        .exec(), // Use exec() for better performance
+      Yacht.countDocuments(filter).exec()
+    ]);
 
-    const yachtsWithUrls = mapImageFilenamesToUrls(yachts, req);
+    // Optimize image URL mapping
+    const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
+    const yachtsWithUrls = yachts.map(yacht => ({
+      ...yacht,
+      primaryImage: yacht.primaryImage ? baseUrl + yacht.primaryImage : null
+    }));
+
+    const response = {
+      yachts: yachtsWithUrls,
+      page: Number(page),
+      limit: parsedLimit,
+      total,
+      totalPages: Math.ceil(total / parsedLimit)
+    };
+
     return SuccessHandler(
-      {
-        yachts: yachtsWithUrls,
-        page: Number(page),
-        limit: parsedLimit,
-        total,
-        totalPages: Math.ceil(total / parsedLimit)
-      },
+      response,
       200,
       'Yachts fetched successfully',
       res
@@ -148,17 +165,30 @@ export const getYachtById = async (req, res, next) => {
     // Validate the query using Joi
     const { error } = getYachtByIdSchema.validate(req.query);
     if (error) {
-      // You can use your ApiError class for consistency
       return next(new ApiError(error.details[0].message, 400));
     }
 
     const { id } = req.query;
-    const yacht = await Yacht.findById(id);
+    
+    // Use lean() for better performance and select only needed fields
+    const yacht = await Yacht.findById(id)
+      .select('title boatType price capacity length primaryImage galleryImages status createdAt type slug dayCharter overnightCharter aboutThisBoat specifications boatLayout videoLink badge design built cruisingSpeed lengthOverall fuelCapacity waterCapacity code')
+      .lean()
+      .exec();
+      
     if (!yacht) {
       return next(new ApiError('Yacht not found', 404));
     }
-    const yachtWithUrl = mapImageFilenamesToUrls(yacht, req);
-    return SuccessHandler(yachtWithUrl, 200, 'Yacht fetched successfully', res);
+    
+    // Optimize image URL mapping
+    const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
+    const yachtWithUrls = {
+      ...yacht,
+      primaryImage: yacht.primaryImage ? baseUrl + yacht.primaryImage : null,
+      galleryImages: yacht.galleryImages ? yacht.galleryImages.map(img => baseUrl + img) : []
+    };
+    
+    return SuccessHandler(yachtWithUrls, 200, 'Yacht fetched successfully', res);
   } catch (err) {
     next(new ApiError(err.message, 400));
   }

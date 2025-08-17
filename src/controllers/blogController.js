@@ -110,12 +110,17 @@ export const getAllBlogs = async (req, res, next) => {
       filter.status = status;
     }
 
-    const blogs = await Blog.find(filter)
+    // Use Promise.all for parallel execution and lean() for better performance
+    const [blogs, total] = await Promise.all([
+      Blog.find(filter)
+        .select('title slug image status createdAt excerpt')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parsedLimit);
-
-    const total = await Blog.countDocuments(filter);
+        .limit(parsedLimit)
+        .lean()
+        .exec(),
+      Blog.countDocuments(filter).exec()
+    ]);
 
     const response = {
       blogs,
@@ -146,7 +151,12 @@ export const getBlogById = async (req, res, next) => {
     }
 
     const { id } = req.query;
-    const blog = await Blog.findById(id);
+    
+    // Use lean() for better performance and select only needed fields
+    const blog = await Blog.findById(id)
+      .select('title slug image status createdAt excerpt content author tags')
+      .lean()
+      .exec();
     
     if (!blog) {
       logger.warn({

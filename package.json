@@ -4,7 +4,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon src/index.js"
+    "start": "nodemon src/index.js",
+    "test:load": "artillery run artillery-all-apis.yml",
+    "test:load:report": "artillery run --output report.json artillery-all-apis.yml && artillery report report.json"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +19,8 @@
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
+    "ioredis": "^5.7.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.1",
@@ -25,5 +29,8 @@
     "nodemon": "^3.1.10",
     "streamifier": "^0.1.1",
     "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "artillery": "^2.0.24"
   }
 }

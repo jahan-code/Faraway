@@ -43,7 +43,33 @@ const startServer = async () => {
         app.get('/health', (req, res) => {
             res.json({
                 message: 'OK',
+                timestamp: new Date().toISOString(),
+                uptime: process.uptime()
             });
+        });
+
+        // Redis health check endpoint
+        app.get('/redis-health', async (req, res) => {
+            try {
+                const { default: redis } = await import('./utils/cache.js');
+                const start = Date.now();
+                await redis.ping();
+                const responseTime = Date.now() - start;
+                
+                res.json({
+                    status: 'OK',
+                    redis: 'Connected',
+                    responseTime: `${responseTime}ms`,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                res.status(500).json({
+                    status: 'ERROR',
+                    redis: 'Disconnected',
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+            }
         });
 
         app.use('/', router);

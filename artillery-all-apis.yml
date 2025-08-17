@@ -1,0 +1,105 @@
+config:
+  target: "https://Awais.thedevapp.online"
+  phases:
+    # Warm-up phase
+    - duration: 30
+      arrivalRate: 3
+      name: "Warm-up"
+    
+    # Sustained load phase
+    - duration: 90
+      arrivalRate: 8
+      name: "Sustained load"
+    
+    # Peak load phase
+    - duration: 60
+      arrivalRate: 15
+      name: "Peak load"
+  
+  # Optimized HTTP settings
+  http:
+    timeout: 25
+    pool: 12
+
+scenarios:
+  - name: "Yacht APIs Test"
+    weight: 50
+    flow:
+      # Test yacht listing
+      - get:
+          url: "/yacht/all-yachts"
+          qs:
+            page: "1"
+            limit: "10"
+          expect:
+            - statusCode: [200, 201]
+          capture:
+            - json: "$.success"
+              as: "yacht_list_success"
+      
+      - think: 1
+      
+      # Test individual yacht (if we have yacht IDs)
+      - function: "setRandomPage"
+      
+      - get:
+          url: "/yacht/all-yachts"
+          qs:
+            page: "{{pageNumber}}"
+            limit: "5"
+          expect:
+            - statusCode: [200, 201]
+      
+      - think: 2
+
+  - name: "Blog APIs Test"
+    weight: 30
+    flow:
+      # Test blog listing
+      - get:
+          url: "/blog/all-blogs"
+          qs:
+            page: "1"
+            limit: "10"
+          expect:
+            - statusCode: [200, 201]
+          capture:
+            - json: "$.success"
+              as: "blog_list_success"
+      
+      - think: 1
+      
+      # Test different blog pages
+      - function: "setRandomPage"
+      
+      - get:
+          url: "/blog/all-blogs"
+          qs:
+            page: "{{pageNumber}}"
+            limit: "5"
+          expect:
+            - statusCode: [200, 201]
+      
+      - think: 2
+
+  - name: "Health Check Test"
+    weight: 20
+    flow:
+      # Test health endpoint
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: [200]
+          capture:
+            - json: "$.message"
+              as: "health_status"
+      
+      - think: 1
+
+# Custom functions
+functions:
+  setRandomPage: |
+    function setRandomPage(userContext, events, done) {
+      userContext.vars.pageNumber = Math.floor(Math.random() * 3) + 1;
+      return done();
+    }

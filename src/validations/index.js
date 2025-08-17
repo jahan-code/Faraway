@@ -35,6 +35,10 @@ const validationSchemas = {
     '/blog/edit-blog': { PUT: editBlogSchema },
     '/blog/delete-blog': { DELETE: deleteBlogSchema },
     '/blog/update-status': { PATCH: updateBlogStatusSchema },
+    
+    // Health check endpoints (no validation needed)
+    '/health': { GET: null },
+    '/redis-health': { GET: null },
 };
 
 export { validationSchemas };
