@@ -32,10 +32,12 @@ export const smartRateLimit = rateLimit({
 export const smartSlowDown = slowDown({
   windowMs: 15 * 60 * 1000, // 15 minutes
   delayAfter: 100, // Allow 100 requests before slowing down
-  delayMs: 200, // Add 200ms delay per request after limit
+  delayMs: () => 200, // Fixed for v2: use function instead of number
   maxDelayMs: 10000, // Maximum delay of 10 seconds
   // Performance optimizations
   skipSuccessfulRequests: true, // Don't slow down successful requests
+  // Disable validation warnings
+  validate: { delayMs: false }
 });
 
 // ===== 4. STRICT RATE LIMIT - For Login Routes =====

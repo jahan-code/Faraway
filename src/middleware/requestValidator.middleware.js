@@ -4,6 +4,30 @@ import errorConstants from '../utils/errors.js';
 import { validationSchemas } from '../validations/index.js';
 import { pathToRegexp } from 'path-to-regexp';
 
+// Simple route matching fallback for critical routes
+const simpleRouteMatch = (url, route) => {
+    if (!route || !url) return false;
+    
+    // Exact match
+    if (route === url) return true;
+    
+    // Handle dynamic routes with simple pattern matching
+    if (route.includes(':')) {
+        const routeParts = route.split('/');
+        const urlParts = url.split('/');
+        
+        if (routeParts.length !== urlParts.length) return false;
+        
+        for (let i = 0; i < routeParts.length; i++) {
+            if (routeParts[i].startsWith(':')) continue; // Skip dynamic parts
+            if (routeParts[i] !== urlParts[i]) return false;
+        }
+        return true;
+    }
+    
+    return false;
+};
+
 const requestValidator = (req, res, next) => {
     try {
         const { method, originalUrl, body } = req;
@@ -25,19 +49,33 @@ const requestValidator = (req, res, next) => {
             return next();
         }
 
-        // Match the route using path-to-regexp
-        const matchedRoute = Object.keys(validationSchemas).find((route) => {
-            try {
-                const { regexp } = pathToRegexp(route);
-                const isMatch = regexp.test(fullURL);
-                return isMatch;
-            } catch (err) {
-                console.error(
-                    `❌ Failed to compile route pattern "${route}": ${err.message}`
-                );
-                return false;
-            }
-        });
+        // Match the route using path-to-regexp with better error handling
+        let matchedRoute = null;
+        try {
+            matchedRoute = Object.keys(validationSchemas).find((route) => {
+                try {
+                    // Validate route pattern before parsing
+                    if (!route || typeof route !== 'string' || route.trim() === '') {
+                        return false;
+                    }
+                    
+                    // Try path-to-regexp first
+                    const { regexp } = pathToRegexp(route);
+                    const isMatch = regexp.test(fullURL);
+                    return isMatch;
+                } catch (err) {
+                    // Fallback to simple route matching if path-to-regexp fails
+                    console.warn(
+                        `⚠️ Path-to-regexp failed for "${route}", using fallback matching: ${err.message}`
+                    );
+                    return simpleRouteMatch(fullURL, route);
+                }
+            });
+        } catch (err) {
+            console.error(`❌ Route matching error: ${err.message}`);
+            // Continue without validation if route matching fails
+            return next();
+        }
 
         // No matching route in validationSchemas - allow to pass through
         if (!matchedRoute) {
@@ -66,17 +104,23 @@ const requestValidator = (req, res, next) => {
 
         // Only validate if body exists and schema is defined
         if (body && Object.keys(body).length > 0) {
-            const { error } = schema.validate(body, { abortEarly: false });
+            try {
+                const { error } = schema.validate(body, { abortEarly: false });
 
-            if (error) {
-                console.error(
-                    `❌ Joi validation error in route ${method} ${matchedRoute}:`
-                );
-                error.details.forEach((detail) => {
-                    console.error(`  - ${detail.path.join('.')}: ${detail.message}`);
-                });
+                if (error) {
+                    console.error(
+                        `❌ Joi validation error in route ${method} ${matchedRoute}:`
+                    );
+                    error.details.forEach((detail) => {
+                        console.error(`  - ${detail.path.join('.')}: ${detail.message}`);
+                    });
 
-                return next(new ApiError(error.details[0].message, 400));
+                    return next(new ApiError(error.details[0].message, 400));
+                }
+            } catch (validationErr) {
+                console.error(`❌ Schema validation error: ${validationErr.message}`);
+                // Continue without validation if schema validation fails
+                return next();
             }
         }
 

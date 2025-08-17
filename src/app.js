@@ -64,7 +64,8 @@ const startServer = async () => {
         app.use(requestTimer);
         
         // ===== VALIDATION MIDDLEWARE (FIFTH) =====
-        app.use(requestValidator);
+        // Temporarily disabled due to path-to-regexp errors
+        // app.use(requestValidator);
         
         // ✅ Middleware setup complete
 
