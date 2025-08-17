@@ -8,6 +8,8 @@ import path from 'path';
 import ApiErrorMiddleware from './middleware/ApiError.middleware.js';
 import router from './router/index.js';
 import cookieParser from 'cookie-parser';
+import { requestTimer } from './utils/cache.js';
+import { helmetMiddleware } from './middleware/helmet.middleware.js';
 
 const app = express();
 
@@ -17,6 +19,9 @@ const startServer = async () => {
         app.use(express.json({ limit: '10mb' }));
         app.use(express.urlencoded({ extended: true, limit: '10mb' }));
         app.use(cookieParser());
+        
+        // Security headers with helmet
+        app.use(helmetMiddleware);
         
         // CORS
         app.use(cors({
@@ -32,6 +37,9 @@ const startServer = async () => {
         
         // Static files
         app.use('/uploads', express.static(path.join(process.cwd(), 'src', 'uploads')));
+        
+        // Request timing
+        app.use(requestTimer);
         
         // Health check
         app.get('/health', (req, res) => {
