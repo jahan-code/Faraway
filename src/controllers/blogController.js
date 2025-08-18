@@ -113,9 +113,8 @@ export const getAllBlogs = async (req, res, next) => {
     // Use Promise.all for parallel execution and lean() for better performance
     const [blogs, total] = await Promise.all([
       Blog.find(filter)
-        .select('title slug image status createdAt excerpt')
-      .sort({ createdAt: -1 })
-      .skip(skip)
+        .sort({ createdAt: -1 })
+        .skip(skip)
         .limit(parsedLimit)
         .lean()
         .exec(),
@@ -152,9 +151,8 @@ export const getBlogById = async (req, res, next) => {
 
     const { id } = req.query;
     
-    // Use lean() for better performance and select only needed fields
+    // Use lean() for better performance and return all fields
     const blog = await Blog.findById(id)
-      .select('title slug image status createdAt excerpt content author tags')
       .lean()
       .exec();
     
