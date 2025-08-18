@@ -52,7 +52,7 @@ const yachtSchema = new mongoose.Schema({
 
 // Add indexes for better query performance
 yachtSchema.index({ status: 1, createdAt: -1 }); // For getAllYachts with status filter
-yachtSchema.index({ slug: 1 }); // For slug-based queries
+// slug already has unique: true above; avoid duplicate index definitions
 yachtSchema.index({ type: 1 }); // For type-based queries
 yachtSchema.index({ boatType: 1 }); // For boat type filtering
 yachtSchema.index({ price: 1 }); // For price-based queries

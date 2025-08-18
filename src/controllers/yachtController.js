@@ -6,6 +6,7 @@ import { getYachtByIdSchema, addyachtSchema, editYachtSchema } from '../validati
 import paginate from '../utils/paginate.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
 import mapImageFilenamesToUrls from '../utils/mapImageFilenamesToUrls.js';
+import { clearYachtCache } from '../utils/cache.js';
 
 
 // Add a new yacht
@@ -103,7 +104,8 @@ export const addYacht = async (req, res, next) => {
     }
 
     const newYacht = await Yacht.create(yachtData);
-    
+    // Invalidate caches so lists reflect the new yacht
+    await clearYachtCache();
     // Map image filenames to URLs and return new yacht
     const yachtWithUrls = mapImageFilenamesToUrls(newYacht, req);
     return SuccessHandler(yachtWithUrls, 201, 'Yacht added successfully', res);
@@ -127,7 +129,6 @@ export const getAllYachts = async (req, res, next) => {
     // Use Promise.all for parallel execution
     const [yachts, total] = await Promise.all([
       Yacht.find(filter)
-        .select('title boatType price capacity length primaryImage galleryImages status createdAt type slug passengerDayTrip passengerOvernight bathrooms cabins daytripPriceEuro')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parsedLimit)
@@ -171,7 +172,6 @@ export const getYachtById = async (req, res, next) => {
     
     // Use lean() for better performance and select only needed fields
     const yacht = await Yacht.findById(id)
-      .select('title boatType price capacity length primaryImage galleryImages status createdAt type slug dayCharter overnightCharter aboutThisBoat specifications boatLayout videoLink badge design built cruisingSpeed lengthOverall fuelCapacity waterCapacity code')
       .lean()
       .exec();
       
@@ -199,6 +199,8 @@ export const deleteYacht = async (req, res, next) => {
     if (!yacht) {
       return next(new ApiError('Yacht not found', 404));
     }
+    // Invalidate caches after delete
+    await clearYachtCache();
     return SuccessHandler(null, 200, 'Yacht deleted successfully', res);
   } catch (err) {
     next(new ApiError(err.message, 400));
@@ -267,6 +269,8 @@ export const editYacht = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
+    // Invalidate caches after edit
+    await clearYachtCache();
     // Map image filenames to URLs and return updated yacht
     const yachtWithUrls = mapImageFilenamesToUrls(updatedYacht, req);
     return SuccessHandler(yachtWithUrls, 200, 'Yacht updated successfully', res);
@@ -305,6 +309,8 @@ export const updateYachtStatus = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
+    // Invalidate caches after status change
+    await clearYachtCache();
     // Map image filenames to URLs and return updated yacht
     const yachtWithUrls = mapImageFilenamesToUrls(updatedYacht, req);
     return SuccessHandler(

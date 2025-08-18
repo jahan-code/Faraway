@@ -5,6 +5,7 @@ import logger from '../functions/logger.js';
 import { addBlogSchema, editBlogSchema, getBlogByIdSchema, getAllBlogsSchema, deleteBlogSchema, updateBlogStatusSchema } from '../validations/blog.validation.js';
 import paginate from '../utils/paginate.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
+import { clearBlogCache } from '../utils/cache.js';
 
 // Add a new blog
 export const addBlog = async (req, res, next) => {
@@ -83,6 +84,8 @@ export const addBlog = async (req, res, next) => {
     }
 
     const newBlog = await Blog.create(blogData);
+    // Invalidate blog caches so lists reflect the new item
+    await clearBlogCache();
     
     logger.info({
       message: `✅ Blog created successfully: ${newBlog.title}`,
@@ -238,6 +241,8 @@ export const editBlog = async (req, res, next) => {
       timestamp: new Date().toISOString(),
     });
 
+    // Invalidate blog caches after edit
+    await clearBlogCache();
     return SuccessHandler(updatedBlog, 200, 'Blog updated successfully', res);
   } catch (err) {
     logger.error('❌ Edit blog error:', err);
@@ -267,6 +272,8 @@ export const deleteBlog = async (req, res, next) => {
       timestamp: new Date().toISOString(),
     });
 
+    // Invalidate blog caches after delete
+    await clearBlogCache();
     return SuccessHandler(null, 200, 'Blog deleted successfully', res);
   } catch (err) {
     logger.error('❌ Delete blog error:', err);
@@ -312,6 +319,8 @@ export const updateBlogStatus = async (req, res, next) => {
       timestamp: new Date().toISOString(),
     });
 
+    // Invalidate blog caches after status change
+    await clearBlogCache();
     return SuccessHandler(
       updatedBlog, 
       200, 
