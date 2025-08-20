@@ -19,9 +19,6 @@ const startServer = async () => {
         app.use(express.json({ limit: '10mb' }));
         app.use(express.urlencoded({ extended: true, limit: '10mb' }));
         app.use(cookieParser());
-
-        // Avoid 304 Not Modified after mutations by disabling ETag generation
-        app.set('etag', false);
         
         // Security headers with helmet
         app.use(helmetMiddleware);
