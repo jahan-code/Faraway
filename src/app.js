@@ -22,6 +22,13 @@ const startServer = async () => {
         
         // Security headers with helmet
         app.use(helmetMiddleware);
+
+        // Disable ETag and prevent response caching for dynamic API routes
+        app.disable('etag');
+        app.use((req, res, next) => {
+            res.set('Cache-Control', 'no-store');
+            next();
+        });
         
         // CORS
         app.use(cors({
