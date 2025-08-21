@@ -140,7 +140,7 @@ export const getAllYachts = async (req, res, next) => {
     // Use Promise.all for parallel execution
     const [yachts, total, recentlyUpdated] = await Promise.all([
       Yacht.find(filter)
-        .sort({ createdAt: -1 })
+        .sort({ updatedAt: -1, createdAt: -1 })
         .skip(skip)
         .limit(parsedLimit)
         .lean()
