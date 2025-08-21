@@ -103,6 +103,14 @@ export const addYacht = async (req, res, next) => {
       return next(new ApiError(error.details[0].message, 400));
     }
 
+    // Enforce slug uniqueness (if provided)
+    if (yachtData.slug) {
+      const existingSlug = await Yacht.findOne({ slug: yachtData.slug }).lean().exec();
+      if (existingSlug) {
+        return next(new ApiError('Yacht with this slug already exists', 409));
+      }
+    }
+
     const newYacht = await Yacht.create(yachtData);
     // Invalidate caches so lists reflect the new yacht
     await clearYachtCache();
@@ -110,6 +118,9 @@ export const addYacht = async (req, res, next) => {
     const yachtWithUrls = mapImageFilenamesToUrls(newYacht, req);
     return SuccessHandler(yachtWithUrls, 201, 'Yacht added successfully', res);
   } catch (err) {
+    if (err && err.code === 11000 && (err.keyPattern?.slug || err.keyValue?.slug)) {
+      return next(new ApiError('Yacht with this slug already exists', 409));
+    }
     next(new ApiError(err.message, 400));
   }
 };
@@ -127,14 +138,20 @@ export const getAllYachts = async (req, res, next) => {
     }
 
     // Use Promise.all for parallel execution
-    const [yachts, total] = await Promise.all([
+    const [yachts, total, recentlyUpdated] = await Promise.all([
       Yacht.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parsedLimit)
         .lean()
         .exec(), // Use exec() for better performance
-      Yacht.countDocuments(filter).exec()
+      Yacht.countDocuments(filter).exec(),
+      // Recently updated (last 5)
+      Yacht.find(filter)
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .limit(5)
+        .lean()
+        .exec()
     ]);
 
     // Map image filenames to URLs and return yachts
@@ -142,10 +159,11 @@ export const getAllYachts = async (req, res, next) => {
     
     const response = {
       yachts: yachtsWithUrls,
-        page: Number(page),
-        limit: parsedLimit,
-        total,
-        totalPages: Math.ceil(total / parsedLimit)
+      page: Number(page),
+      limit: parsedLimit,
+      total,
+      totalPages: Math.ceil(total / parsedLimit),
+      recentlyUpdated
     };
 
     return SuccessHandler(
@@ -262,6 +280,14 @@ export const editYacht = async (req, res, next) => {
       return next(new ApiError(validationError.details[0].message, 400));
     }
 
+    // If slug is being changed, ensure uniqueness
+    if (yachtData.slug && yachtData.slug !== existingYacht.slug) {
+      const slugExists = await Yacht.findOne({ slug: yachtData.slug, _id: { $ne: id } }).lean().exec();
+      if (slugExists) {
+        return next(new ApiError('Yacht with this slug already exists', 409));
+      }
+    }
+
     // Update the yacht
     const updatedYacht = await Yacht.findByIdAndUpdate(
       id,
@@ -275,6 +301,9 @@ export const editYacht = async (req, res, next) => {
     const yachtWithUrls = mapImageFilenamesToUrls(updatedYacht, req);
     return SuccessHandler(yachtWithUrls, 200, 'Yacht updated successfully', res);
   } catch (err) {
+    if (err && err.code === 11000 && (err.keyPattern?.slug || err.keyValue?.slug)) {
+      return next(new ApiError('Yacht with this slug already exists', 409));
+    }
     next(new ApiError(err.message, 400));
   }
 };

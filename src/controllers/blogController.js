@@ -114,14 +114,19 @@ export const getAllBlogs = async (req, res, next) => {
     }
 
     // Use Promise.all for parallel execution and lean() for better performance
-    const [blogs, total] = await Promise.all([
+    const [blogs, total, recentlyUpdated] = await Promise.all([
       Blog.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parsedLimit)
         .lean()
         .exec(),
-      Blog.countDocuments(filter).exec()
+      Blog.countDocuments(filter).exec(),
+      Blog.find(filter)
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .limit(5)
+        .lean()
+        .exec()
     ]);
 
     const response = {
@@ -132,6 +137,7 @@ export const getAllBlogs = async (req, res, next) => {
       totalPages: Math.ceil(total / parsedLimit),
       hasNextPage: Number(page) < Math.ceil(total / parsedLimit),
       hasPrevPage: Number(page) > 1,
+      recentlyUpdated
     };
 
     return SuccessHandler(response, 200, 'Blogs fetched successfully', res);
