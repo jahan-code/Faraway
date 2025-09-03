@@ -4,7 +4,6 @@ import ApiError from '../utils/ApiError.js';
 import logger from '../functions/logger.js';
 import { addBlogSchema, editBlogSchema, getBlogByIdSchema, getAllBlogsSchema, deleteBlogSchema, updateBlogStatusSchema } from '../validations/blog.validation.js';
 import paginate from '../utils/paginate.js';
-import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
 import { clearBlogCache } from '../utils/cache.js';
 
 // Add a new blog
@@ -19,44 +18,22 @@ export const addBlog = async (req, res, next) => {
       return next(new ApiError('Blog image is required', 400));
     }
 
-    // Upload image to Cloudinary
+    // Get S3 URL from uploaded file (multer-s3 automatically uploads to S3)
     if (req.files && req.files.image && req.files.image[0]) {
       try {
         const file = req.files.image[0];
         
-        // Check file size (max 10MB)
-        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        // Check file size (max 12MB)
+        const maxSize = 12 * 1024 * 1024; // 12MB in bytes
         if (file.size > maxSize) {
-          return next(new ApiError(`Image file size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of 10MB`, 400));
+          return next(new ApiError(`Image file size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of 12MB`, 400));
         }
         
-        logger.info(`📸 Uploading blog image: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-        // File path logging removed for security
+        logger.info(`📸 Blog image uploaded to S3: ${file.originalname}`);
         
-        // Small delay to ensure file is fully written
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Verify file exists before uploading
-        const fs = await import('fs/promises');
-        try {
-          await fs.access(file.path);
-          logger.info('✅ Blog image file exists and is accessible');
-          
-          // Get file stats to verify it's not empty
-          const stats = await fs.stat(file.path);
-          // File size logging removed for security
-          
-          if (stats.size === 0) {
-            return next(new ApiError('Blog image file is empty', 400));
-          }
-        } catch (accessError) {
-          logger.error('❌ Blog image file does not exist:', file.path);
-          logger.error('❌ Access error:', accessError.message);
-          return next(new ApiError(`Blog image file not found: ${file.path}`, 500));
-        }
-        
-        blogData.image = await uploadToCloudinary(file.path, 'Faraway/blogs/images');
-        logger.info(`✅ Blog image uploaded successfully: ${blogData.image}`);
+        // The file.location contains the S3 URL (set by multer-s3)
+        blogData.image = file.location;
+        logger.info(`✅ Blog image S3 URL: ${blogData.image}`);
       } catch (uploadError) {
         logger.error(`❌ Blog image upload failed:`, uploadError);
         return next(new ApiError(`Failed to upload blog image: ${uploadError.message}`, 400));
@@ -67,35 +44,32 @@ export const addBlog = async (req, res, next) => {
     const { error } = addBlogSchema.validate(blogData);
     if (error) {
       logger.warn({
-        message: error.details[0].message,
-        timestamp: new Date().toISOString(),
+        message: error.details[0].message
       });
       return next(new ApiError(error.details[0].message, 400));
     }
 
     // Check if slug already exists
-    const existingBlog = await Blog.findOne({ slug: blogData.slug });
-    if (existingBlog) {
-      logger.warn({
-        message: `❌ Blog with slug already exists: ${blogData.slug}`,
-        timestamp: new Date().toISOString(),
-      });
+    if (blogData.slug) {
+      const slugExists = await Blog.findOne({ slug: blogData.slug });
+      if (slugExists) {
       return next(new ApiError('Blog with this slug already exists', 409));
+      }
     }
 
-    const newBlog = await Blog.create(blogData);
-    // Invalidate blog caches so lists reflect the new item
+    // Create the blog
+    const blog = new Blog(blogData);
+    await blog.save();
+
+    // Clear blog cache
     await clearBlogCache();
     
-    logger.info({
-      message: `✅ Blog created successfully: ${newBlog.title}`,
-      timestamp: new Date().toISOString(),
-    });
+    logger.info('✅ Blog created successfully');
+    return SuccessHandler(blog, 201, 'Blog created successfully', res);
 
-    return SuccessHandler(newBlog, 201, 'Blog created successfully', res);
   } catch (err) {
-    logger.error('❌ Add blog error:', err);
-    next(new ApiError(err.message || 'Internal server error', 500));
+    logger.error('❌ Error creating blog:', err);
+    return next(new ApiError(err.message || 'Internal server error', 500));
   }
 };
 
@@ -199,18 +173,19 @@ export const editBlog = async (req, res, next) => {
       return next(new ApiError('Blog not found', 404));
     }
 
-    // Handle image upload if provided
+    // Handle image upload if provided (multer-s3 automatically uploads to S3)
     if (req.files && req.files.image && req.files.image[0]) {
       try {
         const file = req.files.image[0];
         
-        // Check file size (max 10MB)
-        const maxSize = 10 * 1024 * 1024;
+        // Check file size (max 12MB)
+        const maxSize = 12 * 1024 * 1024;
         if (file.size > maxSize) {
-          return next(new ApiError(`Image file size exceeds maximum allowed size of 10MB`, 400));
+          return next(new ApiError(`Image file size exceeds maximum allowed size of 12MB`, 400));
         }
         
-        blogData.image = await uploadToCloudinary(file.path, 'Faraway/blogs/images');
+        // The file.location contains the S3 URL
+        blogData.image = file.location;
         logger.info(`✅ Blog image updated successfully: ${blogData.image}`);
       } catch (uploadError) {
         logger.error(`❌ Blog image upload failed:`, uploadError);
@@ -242,17 +217,17 @@ export const editBlog = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
-    logger.info({
-      message: `✅ Blog updated successfully: ${updatedBlog.title}`,
-      timestamp: new Date().toISOString(),
-    });
-
-    // Invalidate blog caches after edit
+    // Clear blog cache
     await clearBlogCache();
+
+    logger.info({
+      message: `✅ Blog updated successfully: ${updatedBlog.title}`
+    });
     return SuccessHandler(updatedBlog, 200, 'Blog updated successfully', res);
+
   } catch (err) {
-    logger.error('❌ Edit blog error:', err);
-    next(new ApiError(err.message || 'Internal server error', 500));
+    logger.error('❌ Error updating blog:', err);
+    return next(new ApiError(err.message || 'Internal server error', 500));
   }
 };
 

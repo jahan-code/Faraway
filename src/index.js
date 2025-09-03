@@ -11,8 +11,8 @@ import path from 'path';
 const PORT = process.env.PORT;
 const server = http.createServer(app);
 
-// Serve uploads folder at /uploads
-app.use('/uploads', express.static(path.join(process.cwd(), 'src/uploads')));
+// Note: Static files are now served from AWS S3 instead of local storage
+// The /uploads route has been removed as files are uploaded directly to S3
 
 connectDB().then(() => {
     server.listen(PORT, () => {

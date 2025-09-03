@@ -42,8 +42,8 @@ const startServer = async () => {
             credentials: true
         }));
         
-        // Static files
-        app.use('/uploads', express.static(path.join(process.cwd(), 'src', 'uploads')));
+        // Note: Static files are now served from AWS S3 instead of local storage
+        // The /uploads route has been removed as files are uploaded directly to S3
         
         // Request timing
         app.use(requestTimer);

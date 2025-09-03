@@ -1,45 +1,39 @@
 import multer from 'multer';
+import multerS3 from 'multer-s3';
+import { s3Client, BUCKET_NAME } from '../config/s3.js';
 import path from 'path';
-import os from 'os';
-import fs from 'fs';
 
-const tempRoot = path.join(os.tmpdir(), 'uploads', 'Faraway');
-// Temp directory logging removed for security
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // File processing logging removed for security
+// S3 storage configuration
+const s3Storage = multerS3({
+  s3: s3Client,
+  bucket: BUCKET_NAME,
+  // Removed ACL setting since bucket has ACLs disabled
+  contentType: multerS3.AUTO_CONTENT_TYPE,
+  key: function (req, file, cb) {
     let subfolder = '';
     
     // Handle yacht images
     if (file.fieldname === 'primaryImage') {
-      subfolder = path.join('yachts', 'primaryImage');
+      subfolder = 'yachts/primaryImage';
     } else if (file.fieldname === 'galleryImages' || file.fieldname === 'galleryImages[]') {
-      subfolder = path.join('yachts', 'galleryImages');
+      subfolder = 'yachts/galleryImages';
     } 
     // Handle blog images
     else if (file.fieldname === 'image') {
-      subfolder = path.join('blogs', 'images');
+      subfolder = 'blogs/images';
     } else {
-      // Unexpected field logging removed for security
       return cb(new Error('Unexpected upload field: ' + file.fieldname), null);
     }
     
-    const dest = path.join(tempRoot, subfolder);
-    fs.mkdirSync(dest, { recursive: true }); // Ensure the folder exists
-    cb(null, dest);
-  },
-  filename: function (req, file, cb) {
+    // Generate unique filename
     const ext = path.extname(file.originalname);
-    // Remove brackets from fieldname for filename
     const cleanFieldName = file.fieldname.replace(/[\[\]]/g, '');
-    // Add unique identifier to prevent filename collisions
     const uniqueId = Math.random().toString(36).substring(2, 15);
     const finalName = Date.now() + '-' + cleanFieldName + '-' + uniqueId + ext;
     
-    // Filename generation logging removed for security
-    cb(null, finalName);
-  },
+    const s3Key = `${subfolder}/${finalName}`;
+    cb(null, s3Key);
+  }
 });
 
 const fileFilter = (req, file, cb) => {
@@ -58,9 +52,9 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-  storage,
+  storage: s3Storage,
   fileFilter,
-  limits: { fileSize: 12 * 1024 * 1024 }, // 10MB max
+  limits: { fileSize: 12 * 1024 * 1024 }, // 12MB max
 });
 
 export default upload;

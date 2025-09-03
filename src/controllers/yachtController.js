@@ -4,10 +4,8 @@ import ApiError from '../utils/ApiError.js';
 
 import { getYachtByIdSchema, addyachtSchema, editYachtSchema } from '../validations/yacht.validation.js';
 import paginate from '../utils/paginate.js';
-import { uploadToCloudinary } from '../utils/cloudinaryUtil.js';
 import mapImageFilenamesToUrls from '../utils/mapImageFilenamesToUrls.js';
 import { clearYachtCache } from '../utils/cache.js';
-
 
 // Add a new yacht
 export const addYacht = async (req, res, next) => {
@@ -19,46 +17,29 @@ export const addYacht = async (req, res, next) => {
       return next(new ApiError('Primary image is required', 400));
     }
 
-    // Upload primaryImage to Cloudinary
+    // Get S3 URL from uploaded file (multer-s3 automatically uploads to S3)
     if (req.files && req.files.primaryImage && req.files.primaryImage[0]) {
       try {
         const file = req.files.primaryImage[0];
         
-        // Check file size (max 10MB)
-        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        // Check file size (max 12MB)
+        const maxSize = 12 * 1024 * 1024; // 12MB in bytes
         if (file.size > maxSize) {
-          return next(new ApiError(`Primary image file size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of 10MB`, 400));
+          return next(new ApiError(`Primary image file size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of 12MB`, 400));
         }
         
-        console.log(`📸 Uploading primary image: ${file.originalname}`);
+        console.log(`📸 Primary image uploaded to S3: ${file.originalname}`);
         
-        // Small delay to ensure file is fully written
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Verify file exists before uploading
-        const fs = await import('fs/promises');
-        try {
-          await fs.access(file.path);
-          // Get file stats to verify it's not empty
-          const stats = await fs.stat(file.path);
-          
-          if (stats.size === 0) {
-            return next(new ApiError('Primary image file is empty', 400));
-          }
-        } catch (accessError) {
-          console.error('❌ Primary image file access error');
-          return next(new ApiError('Primary image file not found', 500));
-        }
-        
-        yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
-        console.log('✅ Primary image uploaded successfully');
+        // The file.location contains the S3 URL (set by multer-s3)
+        yachtData.primaryImage = file.location;
+        console.log('✅ Primary image S3 URL:', yachtData.primaryImage);
       } catch (uploadError) {
         console.error('❌ Primary image upload failed');
         return next(new ApiError('Failed to upload primary image', 400));
       }
     }
 
-    // Upload galleryImages to Cloudinary
+    // Handle gallery images (multer-s3 automatically uploads to S3)
     const galleryImageFiles = [
       ...(req.files?.galleryImages || []),
       ...(req.files?.['galleryImages[]'] || []),
@@ -67,61 +48,55 @@ export const addYacht = async (req, res, next) => {
     console.log(`🖼️ Gallery images found: ${galleryImageFiles.length}`);
     
     if (galleryImageFiles.length > 0) {
-      yachtData.galleryImages = [];
+      const galleryImageUrls = [];
+      
               for (const file of galleryImageFiles) {
           try {
-            // Check file size (max 10MB)
-            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+          // Check file size (max 12MB)
+          const maxSize = 12 * 1024 * 1024;
             if (file.size > maxSize) {
-              return next(new ApiError(`Gallery image file size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of 10MB`, 400));
-            }
-            
-            console.log(`📸 Uploading gallery image: ${file.originalname}`);
-            
-            // Check if file exists
-            const fs = await import('fs/promises');
-            try {
-              await fs.access(file.path);
-            } catch (accessError) {
-              console.error('❌ Gallery image file access error');
-              return next(new ApiError('Gallery image file not found', 500));
-            }
-            
-            const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
-            yachtData.galleryImages.push(url);
-            console.log('✅ Gallery image uploaded successfully');
+            return next(new ApiError(`Gallery image file size exceeds maximum allowed size of 12MB`, 400));
+          }
+          
+          // The file.location contains the S3 URL
+          galleryImageUrls.push(file.location);
+          console.log(`✅ Gallery image uploaded to S3: ${file.originalname}`);
           } catch (uploadError) {
             console.error('❌ Gallery image upload failed');
             return next(new ApiError('Failed to upload gallery image', 400));
           }
         }
+      
+      yachtData.galleryImages = galleryImageUrls;
     }
 
-    // Now validate yachtData
+    // Validate yacht data
     const { error } = addyachtSchema.validate(yachtData);
     if (error) {
       return next(new ApiError(error.details[0].message, 400));
     }
 
-    // Enforce slug uniqueness (if provided)
+    // Check if slug already exists
     if (yachtData.slug) {
-      const existingSlug = await Yacht.findOne({ slug: yachtData.slug }).lean().exec();
-      if (existingSlug) {
+      const slugExists = await Yacht.findOne({ slug: yachtData.slug });
+      if (slugExists) {
         return next(new ApiError('Yacht with this slug already exists', 409));
       }
     }
 
-    const newYacht = await Yacht.create(yachtData);
-    // Invalidate caches so lists reflect the new yacht
+    // Create the yacht
+    const yacht = new Yacht(yachtData);
+    await yacht.save();
+
+    // Clear yacht cache
     await clearYachtCache();
-    // Map image filenames to URLs and return new yacht
-    const yachtWithUrls = mapImageFilenamesToUrls(newYacht, req);
-    return SuccessHandler(yachtWithUrls, 201, 'Yacht added successfully', res);
+
+    console.log('✅ Yacht created successfully');
+    return SuccessHandler(yacht, 201, 'Yacht created successfully', res);
+
   } catch (err) {
-    if (err && err.code === 11000 && (err.keyPattern?.slug || err.keyValue?.slug)) {
-      return next(new ApiError('Yacht with this slug already exists', 409));
-    }
-    next(new ApiError(err.message, 400));
+    console.error('❌ Error creating yacht:', err);
+    return next(new ApiError(err.message || 'Internal server error', 500));
   }
 };
 
@@ -228,6 +203,8 @@ export const deleteYacht = async (req, res, next) => {
 // Edit yacht by ID
 export const editYacht = async (req, res, next) => {
   try {
+    console.log('✏️ Edit yacht request received');
+
     const { id } = req.query;
     let yachtData = req.body;
 
@@ -243,17 +220,26 @@ export const editYacht = async (req, res, next) => {
       return next(new ApiError('Yacht not found', 404));
     }
 
-    // Handle primary image upload if provided (file upload or base64 string)
+    // Handle primary image upload if provided (multer-s3 automatically uploads to S3)
     if (req.files && req.files.primaryImage && req.files.primaryImage[0]) {
       try {
         const file = req.files.primaryImage[0];
-        yachtData.primaryImage = await uploadToCloudinary(file.path, 'Faraway/yachts/primaryImage');
+        
+        // Check file size (max 12MB)
+        const maxSize = 12 * 1024 * 1024;
+        if (file.size > maxSize) {
+          return next(new ApiError(`Primary image file size exceeds maximum allowed size of 12MB`, 400));
+        }
+        
+        // The file.location contains the S3 URL
+        yachtData.primaryImage = file.location;
+        console.log('✅ Primary image updated successfully');
       } catch (uploadError) {
         return next(new ApiError(`Failed to upload primary image: ${uploadError.message}`, 400));
       }
     }
 
-    // Handle gallery images upload if provided (file upload or base64 strings)
+    // Handle gallery images upload if provided (multer-s3 automatically uploads to S3)
     const galleryImageFiles = [
       ...(req.files?.galleryImages || []),
       ...(req.files?.['galleryImages[]'] || []),
@@ -263,8 +249,14 @@ export const editYacht = async (req, res, next) => {
       const newGalleryImages = [];
       for (const file of galleryImageFiles) {
         try {
-          const url = await uploadToCloudinary(file.path, 'Faraway/yachts/galleryImages');
-          newGalleryImages.push(url);
+          // Check file size (max 12MB)
+          const maxSize = 12 * 1024 * 1024;
+          if (file.size > maxSize) {
+            return next(new ApiError(`Gallery image file size exceeds maximum allowed size of 12MB`, 400));
+          }
+          
+          // The file.location contains the S3 URL
+          newGalleryImages.push(file.location);
         } catch (uploadError) {
           return next(new ApiError(`Failed to upload gallery image: ${uploadError.message}`, 400));
         }
@@ -282,7 +274,10 @@ export const editYacht = async (req, res, next) => {
 
     // If slug is being changed, ensure uniqueness
     if (yachtData.slug && yachtData.slug !== existingYacht.slug) {
-      const slugExists = await Yacht.findOne({ slug: yachtData.slug, _id: { $ne: id } }).lean().exec();
+      const slugExists = await Yacht.findOne({ 
+        slug: yachtData.slug, 
+        _id: { $ne: id } 
+      });
       if (slugExists) {
         return next(new ApiError('Yacht with this slug already exists', 409));
       }
@@ -295,16 +290,15 @@ export const editYacht = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
-    // Invalidate caches after edit
+    // Clear yacht cache
     await clearYachtCache();
-    // Map image filenames to URLs and return updated yacht
-    const yachtWithUrls = mapImageFilenamesToUrls(updatedYacht, req);
-    return SuccessHandler(yachtWithUrls, 200, 'Yacht updated successfully', res);
+
+    console.log('✅ Yacht updated successfully');
+    return SuccessHandler(updatedYacht, 200, 'Yacht updated successfully', res);
+
   } catch (err) {
-    if (err && err.code === 11000 && (err.keyPattern?.slug || err.keyValue?.slug)) {
-      return next(new ApiError('Yacht with this slug already exists', 409));
-    }
-    next(new ApiError(err.message, 400));
+    console.error('❌ Error updating yacht:', err);
+    return next(new ApiError(err.message || 'Internal server error', 500));
   }
 };
 
